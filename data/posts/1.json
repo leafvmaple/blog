@@ -4,6 +4,9 @@
     "number": 1,
     "title": "Hello, World",
     "body": "# 第一篇文章\n\n这是用 GitHub Issue 写的博客内容。\n\n- 标题就是 issue 标题\n- 正文支持完整 Markdown\n- 只有仓库 owner（你自己）创建的 issue 会显示在首页",
+    "bodies": {
+      "zh": "# 第一篇文章\n\n这是用 GitHub Issue 写的博客内容。\n\n- 标题就是 issue 标题\n- 正文支持完整 Markdown\n- 只有仓库 owner（你自己）创建的 issue 会显示在首页"
+    },
     "html_url": "https://github.com/leafvmaple/blog/issues/1",
     "created_at": "2026-05-21T08:27:32Z",
     "comments": 0,
