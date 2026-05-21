@@ -1,6 +1,6 @@
 const GITHUB_API = 'https://api.github.com'
-const OWNER = 'luckyyyyy'
-const REPO = 'Blog'
+const OWNER = 'leafvmaple'
+const REPO = 'blog'
 
 export interface Issue {
   id: number

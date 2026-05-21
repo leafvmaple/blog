@@ -11,7 +11,7 @@ export default function Header() {
         </Link>
         <nav className="header-nav">
           <Link to="/blog">Blog</Link>
-          <a target="_blank" rel="noopener noreferrer" href="https://github.com/luckyyyyy">GitHub</a>
+          <a target="_blank" rel="noopener noreferrer" href="https://github.com/leafvmaple">GitHub</a>
         </nav>
       </div>
     </header>
