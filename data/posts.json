@@ -11,7 +11,36 @@
       "login": "leafvmaple",
       "avatar_url": "https://avatars.githubusercontent.com/u/7375646?v=4"
     },
-    "labels": []
+    "labels": [
+      {
+        "name": "C++",
+        "color": "00599c"
+      },
+      {
+        "name": "游戏引擎",
+        "color": "7c3aed"
+      },
+      {
+        "name": "cocos2d-x",
+        "color": "f59e0b"
+      },
+      {
+        "name": "OpenGL",
+        "color": "5586a4"
+      },
+      {
+        "name": "Vulkan",
+        "color": "ac162c"
+      },
+      {
+        "name": "渲染",
+        "color": "ea580c"
+      },
+      {
+        "name": "复盘",
+        "color": "475569"
+      }
+    ]
   },
   {
     "id": 4492992053,
