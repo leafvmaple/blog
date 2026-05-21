@@ -208,15 +208,20 @@ export function pickLocalized<T extends string>(
   return map[lang] ?? map[DEFAULT_LANG] ?? map.zh ?? map.ja ?? fallback
 }
 
-// Per-language label display names. Key = canonical GitHub label name; missing
-// entries fall back to the label's own name (so language-neutral labels like
-// "C++" / "OpenGL" need no entry).
+// Per-language label display names. Keys are the canonical English label names
+// stored on GitHub. Missing entries fall back to the raw label name (so simple
+// brand / acronym labels like "C++", "OpenGL", "Vulkan", "cocos2d-x" need no
+// translation here).
 export const LABEL_T: Record<Lang, Record<string, string>> = {
-  zh: {},
+  zh: {
+    'game-engine': '游戏引擎',
+    'rendering': '渲染',
+    'recap': '复盘',
+  },
   ja: {
-    '游戏引擎': 'ゲームエンジン',
-    '渲染': 'レンダリング',
-    '复盘': '振り返り',
+    'game-engine': 'ゲームエンジン',
+    'rendering': 'レンダリング',
+    'recap': '振り返り',
   },
 }
 
