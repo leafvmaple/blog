@@ -69,33 +69,52 @@ function splitLangs(body) {
   return out
 }
 
-// Split an issue title on `||` into per-language variants.
+// Split an issue title on `||` into per-language variants (legacy fallback).
 //   "中文标题 || 日本語タイトル"  -> { zh: '中文标题', ja: '日本語タイトル' }
-//   "仅中文标题"                  -> { zh: '仅中文标题' }
-// Order is fixed to LANG_ORDER so author just writes "zh || ja".
+//   "English only title"          -> {}  (caller should fall back to body markers)
+// New posts put localized titles in `<!--title:xx-->` body markers instead and
+// keep the Issue title itself as a single canonical English string.
 const TITLE_LANG_ORDER = ['zh', 'ja']
 function splitTitle(title) {
   const parts = (title || '').split('||').map(s => s.trim()).filter(Boolean)
+  if (parts.length <= 1) return {}
   const out = {}
-  if (parts.length <= 1) {
-    out.zh = (title || '').trim()
-    return out
-  }
   for (let i = 0; i < parts.length && i < TITLE_LANG_ORDER.length; i++) {
     out[TITLE_LANG_ORDER[i]] = parts[i]
   }
   return out
 }
 
+// Extract <!--title:xx-->...<!--/title:xx--> markers from the issue body.
+function splitBodyTitles(body) {
+  const out = {}
+  const re = /<!--\s*title:([a-zA-Z-]+)\s*-->([\s\S]*?)<!--\s*\/title:\1\s*-->/g
+  let m
+  while ((m = re.exec(body || ''))) {
+    out[m[1].toLowerCase()] = m[2].trim()
+  }
+  return out
+}
+
+// Strip title markers so they don't leak into rendered bodies.
+function stripTitleMarkers(body) {
+  return (body || '').replace(/<!--\s*title:[a-zA-Z-]+\s*-->[\s\S]*?<!--\s*\/title:[a-zA-Z-]+\s*-->\s*/g, '')
+}
+
 function pickIssue(i) {
-  const titles = splitTitle(i.title)
+  const bodyTitles = splitBodyTitles(i.body)
+  const legacyTitles = splitTitle(i.title)
+  // Body markers win; legacy `||` titles fill any gaps; raw Issue title is the
+  // canonical fallback when a locale has no localized title at all.
+  const titles = { ...legacyTitles, ...bodyTitles }
+  const cleanBody = stripTitleMarkers(i.body)
   return {
     id: i.id,
     number: i.number,
-    title: titles.zh || i.title,
+    title: i.title,
     titles,
-    body: i.body,
-    bodies: splitLangs(i.body),
+    body: cleanBody,
+    bodies: splitLangs(cleanBody),
     html_url: i.html_url,
     created_at: i.created_at,
     comments: i.comments,

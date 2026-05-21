@@ -5,8 +5,11 @@
 //   node scripts/assemble-post.mjs <issue-number> [out-file]
 //
 // Reads every `posts/<N>-*.<lang>.md` (lang = zh / ja / ...) and writes the
-// combined body wrapped in `<!--lang:xx-->...<!--/lang:xx-->` markers.
-// fetch-posts.mjs splits the same markers back at build time.
+// combined body wrapped in `<!--lang:xx-->...<!--/lang:xx-->` markers, prefixed
+// with `<!--title:xx-->...<!--/title:xx-->` blocks extracted from each file's
+// first `# H1` line. fetch-posts.mjs splits both back at build time, so the
+// GitHub Issue title only needs the canonical English version while each
+// locale renders its own translated title.
 //
 // If [out-file] is given, writes UTF-8 bytes there (recommended on Windows
 // PowerShell, which mangles UTF-8 stdout via cp936). Otherwise prints to stdout.
@@ -50,11 +53,18 @@ async function main() {
   ]
 
   const parts = []
+  const titleBlocks = []
   for (const lang of ordered) {
-    const text = (await readFile(resolve(POSTS_DIR, found.get(lang)), 'utf8')).trim()
-    parts.push(`<!--lang:${lang}-->\n${text}\n<!--/lang:${lang}-->`)
+    const raw = (await readFile(resolve(POSTS_DIR, found.get(lang)), 'utf8')).trim()
+    const m = raw.match(/^#\s+(.+?)\s*$/m)
+    if (!m) {
+      console.error(`[assemble-post] ${found.get(lang)} missing top-level "# Title" line`)
+      process.exit(1)
+    }
+    titleBlocks.push(`<!--title:${lang}-->${m[1].trim()}<!--/title:${lang}-->`)
+    parts.push(`<!--lang:${lang}-->\n${raw}\n<!--/lang:${lang}-->`)
   }
-  const out = parts.join('\n\n') + '\n'
+  const out = titleBlocks.join('\n') + '\n\n' + parts.join('\n\n') + '\n'
   const outFile = process.argv[3]
   if (outFile) {
     await writeFile(resolve(process.cwd(), outFile), out, 'utf8')
