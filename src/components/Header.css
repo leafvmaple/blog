@@ -87,6 +87,26 @@
   color: #111;
 }
 
+.header-lang {
+  margin-left: 4px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: #444;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.header-lang:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #111;
+  border-color: rgba(0, 0, 0, 0.22);
+}
+
 @media (prefers-color-scheme: dark) {
   .header-nav a {
     color: #999;
@@ -95,6 +115,17 @@
   .header-nav a:hover {
     background: rgba(255, 255, 255, 0.08);
     color: #eee;
+  }
+
+  .header-lang {
+    color: #999;
+    border-color: rgba(255, 255, 255, 0.16);
+  }
+
+  .header-lang:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #eee;
+    border-color: rgba(255, 255, 255, 0.28);
   }
 }
 

@@ -4,11 +4,14 @@ import { marked } from 'marked'
 import { getIssue } from '../api'
 import type { Issue } from '../api'
 import Comments from '../components/Comments'
+import { useLang, useT, localeOf, pickLocalized } from '../i18n'
 import 'github-markdown-css/github-markdown.css'
 import './PostDetail.css'
 
 export default function PostDetail() {
   const { number } = useParams<{ number: string }>()
+  const { lang } = useLang()
+  const t = useT()
   const [issue, setIssue] = useState<Issue | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -21,25 +24,26 @@ export default function PostDetail() {
       .finally(() => setLoading(false))
   }, [number])
 
-  if (loading) return <div className="detail-state">Loading...</div>
+  if (loading) return <div className="detail-state">{t.loading}</div>
   if (error || !issue) return (
     <div className="detail-state detail-error-state">
-      <p>文章不存在或加载失败</p>
-      <Link to="/blog">← 返回列表</Link>
+      <p>{t.post_not_found}</p>
+      <Link to="/blog">{t.back_to_list}</Link>
     </div>
   )
 
-  const html = (marked.parse(issue.body || '') as string).replace(/^<h1[^>]*>.*?<\/h1>\s*/i, '')
+  const body = pickLocalized(issue.bodies, lang, issue.body || '')
+  const html = (marked.parse(body) as string).replace(/^<h1[^>]*>.*?<\/h1>\s*/i, '')
 
   return (
     <div className="post-detail">
       <nav className="detail-nav">
-        <Link to="/blog">← 所有文章</Link>
+        <Link to="/blog">{t.all_posts_link}</Link>
       </nav>
       <article className="detail-article">
         <h1 className="detail-title">{issue.title}</h1>
         <div className="detail-meta">
-          <time>{new Date(issue.created_at).toLocaleDateString('zh-CN')}</time>
+          <time>{new Date(issue.created_at).toLocaleDateString(localeOf(lang))}</time>
           {issue.labels.map(label => (
             <span
               key={label.name}
@@ -55,7 +59,7 @@ export default function PostDetail() {
             rel="noopener noreferrer"
             className="detail-github-link"
           >
-            在 GitHub 查看 ↗
+            {t.view_on_github}
           </a>
         </div>
         <div

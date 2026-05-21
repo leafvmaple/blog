@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { marked } from 'marked'
 import { getIssueComments } from '../api'
 import type { Comment } from '../api'
+import { useLang, useT, localeOf } from '../i18n'
 import './Comments.css'
 
 interface Props {
@@ -13,6 +14,8 @@ interface Props {
 const PER_PAGE = 30
 
 export default function Comments({ issueNumber, issueUrl, totalComments }: Props) {
+  const { lang } = useLang()
+  const t = useT()
   const [comments, setComments] = useState<Comment[]>([])
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(false)
@@ -53,17 +56,17 @@ export default function Comments({ issueNumber, issueUrl, totalComments }: Props
     <section className="comments-section">
       <div className="comments-header">
         <h2 className="comments-title">
-          评论
+          {t.comments_title}
           <span className="comments-count">{totalComments}</span>
         </h2>
         <a href={issueUrl} target="_blank" rel="noopener noreferrer" className="comments-write-btn">
-          去 GitHub 评论 ↗
+          {t.comment_on_github}
         </a>
       </div>
 
       {totalComments === 0 ? (
         <div className="comments-empty">
-          <p>暂无评论，去 GitHub 留下第一条评论吧</p>
+          <p>{t.no_comments}</p>
         </div>
       ) : (
         <>
@@ -79,10 +82,10 @@ export default function Comments({ issueNumber, issueUrl, totalComments }: Props
                       {comment.user.login}
                     </a>
                     <time className="comment-time">
-                      {new Date(comment.created_at).toLocaleDateString('zh-CN')}
+                      {new Date(comment.created_at).toLocaleDateString(localeOf(lang))}
                     </time>
                     <a href={comment.html_url} target="_blank" rel="noopener noreferrer" className="comment-link">
-                      在 GitHub 查看 ↗
+                      {t.view_on_github}
                     </a>
                   </div>
                   <div
@@ -96,9 +99,9 @@ export default function Comments({ issueNumber, issueUrl, totalComments }: Props
               </li>
             ))}
           </ul>
-          {loading && <div className="comments-loading">Loading...</div>}
+          {loading && <div className="comments-loading">{t.loading}</div>}
           {!hasMore && comments.length > 0 && (
-            <div className="comments-end">· 已加载全部评论 ·</div>
+            <div className="comments-end">{t.all_comments_loaded}</div>
           )}
           <div ref={sentinelRef} />
         </>

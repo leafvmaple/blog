@@ -55,12 +55,27 @@ async function paginate(path) {
   return out
 }
 
+function splitLangs(body) {
+  const out = {}
+  const re = /<!--\s*lang:([a-zA-Z-]+)\s*-->([\s\S]*?)<!--\s*\/lang:\1\s*-->/g
+  let m
+  while ((m = re.exec(body || ''))) {
+    out[m[1].toLowerCase()] = m[2].trim()
+  }
+  // Legacy fallback: no markers -> single language (zh).
+  if (Object.keys(out).length === 0) {
+    out.zh = body || ''
+  }
+  return out
+}
+
 function pickIssue(i) {
   return {
     id: i.id,
     number: i.number,
     title: i.title,
     body: i.body,
+    bodies: splitLangs(i.body),
     html_url: i.html_url,
     created_at: i.created_at,
     comments: i.comments,

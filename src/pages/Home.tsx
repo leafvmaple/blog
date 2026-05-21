@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { getIssues, type Issue } from '../api'
 import Post from '../components/Post'
+import { useT } from '../i18n'
 import './Home.css'
 
 const PER_PAGE = 20
 
 export default function Home() {
+  const t = useT()
   const [issues, setIssues] = useState<Issue[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -59,8 +61,8 @@ export default function Home() {
 
   return (
     <div className="home">
-      <h2 className="home-section-title">文章</h2>
-      {error && <div className="home-error">Failed to load posts</div>}
+      <h2 className="home-section-title">{t.home_title}</h2>
+      {error && <div className="home-error">{t.load_failed}</div>}
       <div className="post-list">
         {rows.map(row =>
           row.type === 'year'
@@ -72,8 +74,8 @@ export default function Home() {
             : <Post key={row.issue.id} issue={row.issue} />
         )}
       </div>
-      {loading && <div className="home-loading">Loading...</div>}
-      {!hasMore && issues.length > 0 && <div className="home-end">· 已加载全部文章 ·</div>}
+      {loading && <div className="home-loading">{t.loading}</div>}
+      {!hasMore && issues.length > 0 && <div className="home-end">{t.all_posts_loaded}</div>}
       <div ref={sentinelRef} />
     </div>
   )

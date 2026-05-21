@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import type { Issue } from '../api'
+import { useLang, localeOf } from '../i18n'
 import './Post.css'
 
 interface PostProps {
@@ -7,6 +8,7 @@ interface PostProps {
 }
 
 export default function Post({ issue }: PostProps) {
+  const { lang } = useLang()
   return (
     <Link className="post-link" to={`/post/${issue.number}`}>
       <article className="post-card">
@@ -31,7 +33,7 @@ export default function Post({ issue }: PostProps) {
           <span className="post-author-name">{issue.user.login}</span>
           <span className="post-row2-sep">·</span>
           <time className="post-date">
-            {new Date(issue.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+            {new Date(issue.created_at).toLocaleDateString(localeOf(lang), { year: 'numeric', month: 'short', day: 'numeric' })}
           </time>
           {issue.comments > 0 && (
             <>

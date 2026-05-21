@@ -9,6 +9,11 @@ export interface Issue {
   number: number
   title: string
   body: string
+  /**
+   * Per-language bodies, parsed from `<!--lang:xx-->...<!--/lang:xx-->` markers in `body`.
+   * Always present; for legacy posts without markers, this maps every key to the raw body.
+   */
+  bodies: Record<string, string>
   html_url: string
   created_at: string
   comments: number
