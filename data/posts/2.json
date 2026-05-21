@@ -2,7 +2,7 @@
   "issue": {
     "id": 4493470676,
     "number": 2,
-    "title": "用 1500 行 C++ 写一个 mini cocos2d-x：mini-cocos 的设计复盘",
+    "title": "Building a mini cocos2d-x in 1500 lines of C++: design recap",
     "titles": {
       "zh": "用 1500 行 C++ 写一个 mini cocos2d-x：mini-cocos 的设计复盘",
       "ja": "1500行のC++でmini cocos2d-xを書く：mini-cocos 設計振り返り"
