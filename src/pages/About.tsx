@@ -4,7 +4,7 @@ export default function About() {
   return (
     <div className="about">
       <section className="about-hero">
-        <img className="about-avatar" src="/assets/avatar.png" alt="avatar" />
+        <img className="about-avatar" src="/assets/avatar.jpg" alt="avatar" />
         <div className="about-hero-text">
           <h1 className="about-name">Zohar Lee</h1>
           <p className="about-role">Senior Game Developer · AI Native Engineer · Engine & OS Hacker</p>

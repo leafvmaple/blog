@@ -6,7 +6,7 @@ export default function Header() {
     <header className="header">
       <div className="header-inner">
         <Link to="/" className="header-brand">
-          <img className="header-avatar" src="/assets/avatar.png" alt="avatar" />
+          <img className="header-avatar" src="/assets/avatar.jpg" alt="avatar" />
           <span className="header-name">Zohar Lee</span>
         </Link>
         <nav className="header-nav">
