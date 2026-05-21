@@ -64,96 +64,78 @@ export default function About() {
 
         <a
           className="project-card project-card-featured"
-          href="https://github.com/leafvmaple/Zongine"
+          href="https://github.com/leafvmaple/zonix-plus"
           target="_blank"
           rel="noopener noreferrer"
         >
           <div className="project-card-header">
-            <span className="project-name">Zongine</span>
+            <span className="project-name">zonix-plus · Zonix OS</span>
             <div className="project-card-right">
-              <span className="project-since">since Mar 2025</span>
+              <span className="project-since">since Jan 2026</span>
             </div>
           </div>
           <p className="project-desc">
-            自研 C++ 游戏引擎实验项目。沉淀 10 年 Gameplay 表现层（动画 / 特效 / 渲染同步）与引擎底层经验，
-            从渲染管线、资源系统到 ECS 架构全部自己写，作为 AI Native 重度结对编程的实践场。
+            个人操作系统内核 —— 同时面向 <strong>x86_64 / aarch64 / riscv64</strong> 三种架构的教学型内核，使用 freestanding C++17 编写。
+            覆盖 BIOS + UEFI 双引导路径、进程管理、含 swap 的虚拟内存、同步原语、抢占式调度、VFS 系统调用与 FAT 文件系统支持，
+            通过 Kconfig 风格的模块化配置驱动，使用 Clang/LLVM 工具链构建。
           </p>
           <div className="project-tags">
-            <span>C++</span>
-            <span>Game Engine</span>
-            <span>Rendering</span>
-            <span>ECS</span>
+            <span>C++17</span>
+            <span>OS Kernel</span>
+            <span>x86_64</span>
+            <span>aarch64</span>
+            <span>riscv64</span>
+            <span>UEFI</span>
+            <span>Clang/LLVM</span>
           </div>
         </a>
 
         <div className="project-grid">
           <a
             className="project-card"
-            href="https://github.com/leafvmaple/Sword-UE5"
+            href="https://github.com/leafvmaple/zcc"
             target="_blank"
             rel="noopener noreferrer"
           >
             <div className="project-card-header">
-              <span className="project-name">Sword-UE5</span>
+              <span className="project-name">zcc</span>
               <div className="project-card-right">
-                <span className="project-since">since Mar 2026</span>
+                <span className="project-since">since Jul 2024</span>
               </div>
             </div>
             <p className="project-desc">
-              基于 Unreal Engine 5 的武侠 Gameplay 原型，自研引擎能力向 UE5 迁移的实践项目，
-              聚焦动画 / 特效 / 渲染同步等表现层落地。
+              用 Flex/Bison 做词法语法分析、对接 LLVM 后端的玩具 C 编译器。
+              用于把编译原理从书本练到落地，理解从前端 AST 到 LLVM IR、再到目标代码的完整链路。
             </p>
             <div className="project-tags">
               <span>C++</span>
-              <span>Unreal Engine 5</span>
-              <span>Gameplay</span>
+              <span>Compiler</span>
+              <span>Flex/Bison</span>
+              <span>LLVM</span>
             </div>
           </a>
 
           <a
             className="project-card"
-            href="https://github.com/leafvmaple/Wuxia-Unity"
+            href="https://github.com/leafvmaple/pylua"
             target="_blank"
             rel="noopener noreferrer"
           >
             <div className="project-card-header">
-              <span className="project-name">Wuxia-Unity</span>
+              <span className="project-name">PyLua</span>
               <div className="project-card-right">
-                <span className="project-since">since Mar 2026</span>
+                <span className="project-since">since Jan 2026</span>
               </div>
             </div>
             <p className="project-desc">
-              Unity 引擎下的武侠 Gameplay 原型，与 Sword-UE5 互为参照，
-              用于打通跨引擎能力对齐与表现层一致性验证。
+              用 Python 实现的 Lua 解释器 / 虚拟机实验项目：包含 <code>.luac</code> 字节码读取、词法 / 语法分析、AST、
+              简单代码生成与运行时执行，提供 <code>pylua</code> / <code>pyluac</code> 命令行工具，含 print / metatable 等基础内建函数。
             </p>
             <div className="project-tags">
-              <span>C#</span>
-              <span>Unity</span>
-              <span>Gameplay</span>
-            </div>
-          </a>
-
-          <a
-            className="project-card"
-            href="https://github.com/leafvmaple/zonix"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <div className="project-card-header">
-              <span className="project-name">zonix</span>
-              <div className="project-card-right">
-                <span className="project-since">since Oct 2025</span>
-              </div>
-            </div>
-            <p className="project-desc">
-              个人操作系统内核探索项目。从引导、内存管理到调度的逐步自研实践，
-              目标支持 x86_64 / aarch64 双架构平滑演进，是系统级编程的练兵场。
-            </p>
-            <div className="project-tags">
-              <span>C</span>
-              <span>OS Kernel</span>
-              <span>x86_64</span>
-              <span>aarch64</span>
+              <span>Python</span>
+              <span>Lua</span>
+              <span>Interpreter</span>
+              <span>VM</span>
             </div>
           </a>
 
@@ -168,11 +150,12 @@ export default function About() {
               <div className="project-card-right">
                 <span className="project-since">since Apr 2019</span>
                 <span className="project-stars">★ 28</span>
+                <span className="project-live">PyPI ↗</span>
               </div>
             </div>
             <p className="project-desc">
-              已发布到 PyPI 的工具库，可将 Python 列表 / 字典序列化为 Lua table，
-              专为游戏策划数据表与 Lua 配置文件流转设计。
+              已发布到 PyPI 的开源工具库，可将 Python 列表 / 字典与 Lua table 互相序列化。
+              广泛用于游戏策划数据表与 Lua 配置文件之间的双向流转。
             </p>
             <div className="project-tags">
               <span>Python</span>
