@@ -4,7 +4,7 @@ import { marked } from 'marked'
 import { getIssue } from '../api'
 import type { Issue } from '../api'
 import Comments from '../components/Comments'
-import { useLang, useT, localeOf, pickLocalized } from '../i18n'
+import { useLang, useT, localeOf, pickLocalized, useLabelT } from '../i18n'
 import 'github-markdown-css/github-markdown.css'
 import './PostDetail.css'
 
@@ -33,6 +33,8 @@ export default function PostDetail() {
   )
 
   const body = pickLocalized(issue.bodies, lang, issue.body || '')
+  const title = pickLocalized(issue.titles, lang, issue.title)
+  const labelT = useLabelT()
   const html = (marked.parse(body) as string).replace(/^<h1[^>]*>.*?<\/h1>\s*/i, '')
 
   return (
@@ -41,7 +43,7 @@ export default function PostDetail() {
         <Link to="/blog">{t.all_posts_link}</Link>
       </nav>
       <article className="detail-article">
-        <h1 className="detail-title">{issue.title}</h1>
+        <h1 className="detail-title">{title}</h1>
         <div className="detail-meta">
           <time>{new Date(issue.created_at).toLocaleDateString(localeOf(lang))}</time>
           {issue.labels.map(label => (
@@ -50,7 +52,7 @@ export default function PostDetail() {
               className="post-label"
               style={{ background: `#${label.color}20`, color: `#${label.color}`, borderColor: `#${label.color}40` }}
             >
-              {label.name}
+              {labelT(label.name)}
             </span>
           ))}
           <a

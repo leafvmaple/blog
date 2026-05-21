@@ -69,11 +69,31 @@ function splitLangs(body) {
   return out
 }
 
+// Split an issue title on `||` into per-language variants.
+//   "中文标题 || 日本語タイトル"  -> { zh: '中文标题', ja: '日本語タイトル' }
+//   "仅中文标题"                  -> { zh: '仅中文标题' }
+// Order is fixed to LANG_ORDER so author just writes "zh || ja".
+const TITLE_LANG_ORDER = ['zh', 'ja']
+function splitTitle(title) {
+  const parts = (title || '').split('||').map(s => s.trim()).filter(Boolean)
+  const out = {}
+  if (parts.length <= 1) {
+    out.zh = (title || '').trim()
+    return out
+  }
+  for (let i = 0; i < parts.length && i < TITLE_LANG_ORDER.length; i++) {
+    out[TITLE_LANG_ORDER[i]] = parts[i]
+  }
+  return out
+}
+
 function pickIssue(i) {
+  const titles = splitTitle(i.title)
   return {
     id: i.id,
     number: i.number,
-    title: i.title,
+    title: titles.zh || i.title,
+    titles,
     body: i.body,
     bodies: splitLangs(i.body),
     html_url: i.html_url,

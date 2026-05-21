@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import type { Issue } from '../api'
-import { useLang, localeOf } from '../i18n'
+import { useLang, localeOf, pickLocalized, useLabelT } from '../i18n'
 import './Post.css'
 
 interface PostProps {
@@ -9,11 +9,13 @@ interface PostProps {
 
 export default function Post({ issue }: PostProps) {
   const { lang } = useLang()
+  const labelT = useLabelT()
+  const title = pickLocalized(issue.titles, lang, issue.title)
   return (
     <Link className="post-link" to={`/post/${issue.number}`}>
       <article className="post-card">
         <div className="post-row1">
-          <h2 className="post-title">{issue.title}</h2>
+          <h2 className="post-title">{title}</h2>
           {issue.labels.length > 0 && (
             <div className="post-labels">
               {issue.labels.map(label => (
@@ -22,7 +24,7 @@ export default function Post({ issue }: PostProps) {
                   className="post-label"
                   style={{ background: `#${label.color}20`, color: `#${label.color}`, borderColor: `#${label.color}40` }}
                 >
-                  {label.name}
+                  {labelT(label.name)}
                 </span>
               ))}
             </div>

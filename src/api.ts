@@ -8,6 +8,11 @@ export interface Issue {
   id: number
   number: number
   title: string
+  /**
+   * Per-language titles, parsed from `中文 || 日本語` in the Issue title.
+   * Always present; for titles without `||`, this maps `zh` to the raw title.
+   */
+  titles: Record<string, string>
   body: string
   /**
    * Per-language bodies, parsed from `<!--lang:xx-->...<!--/lang:xx-->` markers in `body`.

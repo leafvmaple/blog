@@ -207,3 +207,24 @@ export function pickLocalized<T extends string>(
   if (!map) return fallback
   return map[lang] ?? map[DEFAULT_LANG] ?? map.zh ?? map.ja ?? fallback
 }
+
+// Per-language label display names. Key = canonical GitHub label name; missing
+// entries fall back to the label's own name (so language-neutral labels like
+// "C++" / "OpenGL" need no entry).
+export const LABEL_T: Record<Lang, Record<string, string>> = {
+  zh: {},
+  ja: {
+    '游戏引擎': 'ゲームエンジン',
+    '渲染': 'レンダリング',
+    '复盘': '振り返り',
+  },
+}
+
+export function translateLabel(name: string, lang: Lang): string {
+  return LABEL_T[lang]?.[name] ?? name
+}
+
+export function useLabelT() {
+  const { lang } = useLang()
+  return (name: string) => translateLabel(name, lang)
+}
