@@ -99,12 +99,84 @@
   border: 1px solid rgba(0, 0, 0, 0.12);
   cursor: pointer;
   transition: background 0.15s, color 0.15s, border-color 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1;
 }
 
 .header-lang:hover {
   background: rgba(0, 0, 0, 0.06);
   color: #111;
   border-color: rgba(0, 0, 0, 0.22);
+}
+
+.header-lang-wrap {
+  position: relative;
+  margin-left: 4px;
+  display: inline-block;
+}
+
+.header-lang-wrap .header-lang {
+  margin-left: 0;
+}
+
+.header-lang-caret {
+  opacity: 0.7;
+  transition: transform 0.15s;
+}
+
+.header-lang[aria-expanded="true"] .header-lang-caret {
+  transform: rotate(180deg);
+}
+
+.header-lang-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 140px;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 200;
+}
+
+.header-lang-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 7px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 13px;
+  color: #333;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.header-lang-item:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #111;
+}
+
+.header-lang-item.is-active {
+  color: #111;
+  font-weight: 600;
+}
+
+.header-lang-item.is-active::after {
+  content: '✓';
+  margin-left: 10px;
+  font-size: 12px;
+  opacity: 0.7;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -126,6 +198,25 @@
     background: rgba(255, 255, 255, 0.08);
     color: #eee;
     border-color: rgba(255, 255, 255, 0.28);
+  }
+
+  .header-lang-menu {
+    background: rgba(24, 24, 24, 0.98);
+    border-color: rgba(255, 255, 255, 0.10);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  }
+
+  .header-lang-item {
+    color: #bbb;
+  }
+
+  .header-lang-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #eee;
+  }
+
+  .header-lang-item.is-active {
+    color: #eee;
   }
 }
 

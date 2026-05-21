@@ -5,6 +5,12 @@ export type Lang = 'zh' | 'ja'
 export const LANGS: Lang[] = ['zh', 'ja']
 export const DEFAULT_LANG: Lang = 'zh'
 
+// Native label for each language, shown in the language picker.
+export const LANG_LABELS: Record<Lang, string> = {
+  zh: '中文',
+  ja: '日本語',
+}
+
 const STORAGE_KEY = 'lang'
 
 // Detect from navigator.language(s). Falls back to DEFAULT_LANG.
@@ -74,7 +80,7 @@ export const T = {
     comment_on_github: '去 GitHub 评论 ↗',
     no_comments: '暂无评论，去 GitHub 留下第一条评论吧',
     all_comments_loaded: '· 已加载全部评论 ·',
-    switch_lang_label: '日本語',
+    switch_lang_label: '语言',
   },
   ja: {
     nav_blog: 'Blog',
@@ -90,7 +96,7 @@ export const T = {
     comment_on_github: 'GitHub でコメントする ↗',
     no_comments: 'コメントはまだありません。GitHub で最初のコメントを残しましょう',
     all_comments_loaded: '· すべてのコメントを読み込みました ·',
-    switch_lang_label: '中文',
+    switch_lang_label: '言語',
   },
 } as const
 
