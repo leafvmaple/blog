@@ -42,19 +42,24 @@ GitHub Issue 的 body 里用注释标记分隔每种语言：
    posts/N-slug.zh.md
    posts/N-slug.ja.md   # 可选；缺省时 ja 用户会看到 zh 兜底
    ```
-3. 合并并推到 Issue：
+3. 合并并推到 Issue（**务必走文件，不要用 PowerShell 管道**，否则 cp936 会把 UTF-8 中文/日文压成 `?????`）：
    ```powershell
-   node scripts/assemble-post.mjs N | gh issue edit N --repo leafvmaple/blog --body-file -
+   node scripts/assemble-post.mjs N tmp_body.md
+   gh issue edit N --repo leafvmaple/blog --body-file tmp_body.md
+   Remove-Item tmp_body.md
    gh issue edit N --repo leafvmaple/blog --add-label "label1,label2"
    gh workflow run deploy.yml --repo leafvmaple/blog
    ```
+   > 验证 body 编码：`gh issue view N` 的输出在 Windows 控制台会显示成乱码（cp936 显示 bug），属于正常现象。要确认真实状态请用 `curl` 拉 `api.github.com/.../issues/N` 看 JSON。
 4. `git add posts && git commit && git push` 让仓库与 Issue 保持一致。
 
 ## 修旧文章
 
 改 `posts/N-slug.<lang>.md` →
 ```powershell
-node scripts/assemble-post.mjs N | gh issue edit N --repo leafvmaple/blog --body-file -
+node scripts/assemble-post.mjs N tmp_body.md
+gh issue edit N --repo leafvmaple/blog --body-file tmp_body.md
+Remove-Item tmp_body.md
 ```
 → commit & push。Issue body 永远以 `posts/` 拼出来的为准。
 
