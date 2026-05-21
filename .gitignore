@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Snapshotted blog data — regenerated each build by scripts/fetch-posts.mjs
+public/data/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
