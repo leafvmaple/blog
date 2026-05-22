@@ -1,7 +1,14 @@
+import { Suspense } from 'react'
 import { Outlet } from 'react-router-dom'
 import Header from './Header'
 import Background from './Background'
+import { useT } from '../i18n'
 import './Layout.css'
+
+function RouteFallback() {
+  const t = useT()
+  return <div className="route-fallback">{t.loading}</div>
+}
 
 export default function Layout() {
   return (
@@ -9,7 +16,9 @@ export default function Layout() {
       <Background />
       <Header />
       <main className="main-content">
-        <Outlet />
+        <Suspense fallback={<RouteFallback />}>
+          <Outlet />
+        </Suspense>
       </main>
     </>
   )

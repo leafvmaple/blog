@@ -1,9 +1,11 @@
+import { lazy } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
-import Home from './pages/Home'
-import About from './pages/About'
-import PostDetail from './pages/PostDetail'
 import NotFound from './pages/NotFound'
+
+const Home = lazy(() => import('./pages/Home'))
+const About = lazy(() => import('./pages/About'))
+const PostDetail = lazy(() => import('./pages/PostDetail'))
 
 export default function App() {
   return (
