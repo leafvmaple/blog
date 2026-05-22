@@ -19,6 +19,11 @@ export default function Background() {
     const DIST = 150
     let particles: Particle[] = []
 
+    const darkMq = window.matchMedia('(prefers-color-scheme: dark)')
+    let dark = darkMq.matches
+    const onScheme = (e: MediaQueryListEvent) => { dark = e.matches }
+    darkMq.addEventListener('change', onScheme)
+
     function resize() {
       const dpr = window.devicePixelRatio || 1
       W = window.innerWidth
@@ -45,13 +50,8 @@ export default function Background() {
       particles = Array.from({ length: COUNT }, spawn)
     }
 
-    function isDark() {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches
-    }
-
     function draw() {
       ctx.clearRect(0, 0, W, H)
-      const dark = isDark()
       const rgb = dark ? '90, 170, 255' : '0, 100, 210'
 
       for (let i = 0; i < particles.length; i++) {
@@ -100,6 +100,7 @@ export default function Background() {
     return () => {
       cancelAnimationFrame(animId)
       window.removeEventListener('resize', start)
+      darkMq.removeEventListener('change', onScheme)
     }
   }, [])
 
