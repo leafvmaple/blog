@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { marked } from 'marked'
 import { getIssueComments } from '../api'
 import type { Comment } from '../api'
@@ -52,6 +52,11 @@ export default function Comments({ issueNumber, issueUrl, totalComments }: Props
     if (page > 1) loadPage(page)
   }, [page, loadPage])
 
+  const rendered = useMemo(
+    () => comments.map(c => ({ comment: c, html: marked.parse(c.body || '') as string })),
+    [comments],
+  )
+
   return (
     <section className="comments-section">
       <div className="comments-header">
@@ -71,7 +76,7 @@ export default function Comments({ issueNumber, issueUrl, totalComments }: Props
       ) : (
         <>
           <ul className="comments-list">
-            {comments.map(comment => (
+            {rendered.map(({ comment, html }) => (
               <li key={comment.id} className="comment-item">
                 <a href={comment.user.html_url} target="_blank" rel="noopener noreferrer" className="comment-avatar-link">
                   <img src={comment.user.avatar_url} alt={comment.user.login} className="comment-avatar" />
@@ -93,7 +98,7 @@ export default function Comments({ issueNumber, issueUrl, totalComments }: Props
                     data-color-mode="auto"
                     data-light-theme="light"
                     data-dark-theme="dark"
-                    dangerouslySetInnerHTML={{ __html: marked.parse(comment.body || '') as string }}
+                    dangerouslySetInnerHTML={{ __html: html }}
                   />
                 </div>
               </li>

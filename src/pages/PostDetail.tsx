@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { marked } from 'marked'
 import { getIssue } from '../api'
@@ -25,6 +25,12 @@ export default function PostDetail() {
       .finally(() => setLoading(false))
   }, [number])
 
+  const html = useMemo(() => {
+    if (!issue) return ''
+    const body = pickLocalized(issue.bodies, lang, issue.body || '')
+    return (marked.parse(body) as string).replace(/^<h1[^>]*>.*?<\/h1>\s*/i, '')
+  }, [issue, lang])
+
   if (loading) return <div className="detail-state">{t.loading}</div>
   if (error || !issue) return (
     <div className="detail-state detail-error-state">
@@ -33,9 +39,7 @@ export default function PostDetail() {
     </div>
   )
 
-  const body = pickLocalized(issue.bodies, lang, issue.body || '')
   const title = pickLocalized(issue.titles, lang, issue.title)
-  const html = (marked.parse(body) as string).replace(/^<h1[^>]*>.*?<\/h1>\s*/i, '')
 
   return (
     <div className="post-detail">
