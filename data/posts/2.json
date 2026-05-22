@@ -47,6 +47,10 @@
       {
         "name": "recap",
         "color": "475569"
+      },
+      {
+        "name": "pinned",
+        "color": "c97a00"
       }
     ]
   },
