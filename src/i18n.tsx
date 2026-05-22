@@ -68,7 +68,7 @@ export function localeOf(lang: Lang): string {
 // UI string dictionary. Keep small; add keys as needed.
 export const T = {
   zh: {
-    doc_title: 'Zohar Lee - 写代码不赚钱 就交个朋友',
+    doc_title: 'Zohar Lee 事件簿',
     nav_blog: 'Blog',
     home_title: '文章',
     loading: '加载中...',
@@ -129,7 +129,7 @@ export const T = {
       '已发布到 PyPI 的开源工具库，可将 Python 列表 / 字典与 Lua table 互相序列化。广泛用于游戏策划数据表与 Lua 配置文件之间的双向流转。',
   },
   ja: {
-    doc_title: 'Zohar Lee - コードを書いて稼げないなら、友達になろう',
+    doc_title: 'Zohar Lee 事件簿',
     nav_blog: 'Blog',
     home_title: '記事',
     loading: '読み込み中...',
