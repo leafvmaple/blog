@@ -4,30 +4,15 @@
 > 提交跨度：2026-03-25 → 2026-05-14，22 次有效提交
 > 体量：~1500 行 C++17，CMake + GLFW + Lua 5.4，OpenGL 3.3 / Vulkan 双后端
 
+这一篇是 mini-cocos 的**主索引帖**。每个子系统的深读拆成了独立文章（见文末"系列文章"），这里只保留串起整套项目的骨架与几条最贯穿的工程经验。
+
 ## 目录
 
 - [0. 为什么要复刻一个"老古董"](#sec-0)
-- [1. 起手：先让三角形画出来 (aee61f3)](#sec-1)
-- [2. 内存管理 + 调度器 (e8b36a2)](#sec-2)
-  - [2.1 Ref + AutoreleasePool：为什么不直接上 shared_ptr](#sec-2-1)
-  - [2.2 Scheduler：脏标记 + 待办队列](#sec-2-2)
-- [3. 事件系统的两次迭代 (fb4300f → b3cc36c → 4b1fc47 系列)](#sec-3)
-  - [3.1 第一版：裸回调](#sec-3-1)
-  - [3.2 第二版：按类型分子类、callback 字段化](#sec-3-2)
-  - [3.3 第三版：贴近 cocos2dx 的双链表 EventDispatcher (4b1fc47 / db6b6dd / 90acab7)](#sec-3-3)
-  - [3.4 父子节点遮挡 (bacb0f9)](#sec-3-4)
-- [4. 渲染队列：用 64-bit sortKey 换掉 struct 比较 (db7892d)](#sec-4)
-- [5. 字体与资源：动态 glyph cache vs 预烘焙图集 (f91253a / 3a5bedd)](#sec-5)
-- [6. Action：把"时间"做成可组合的对象 (05c476e / 495a6e9)](#sec-6)
-- [7. Lua 绑定：手写胶水 vs sol2 (eb546b2 / 82839bc)](#sec-7)
-- [8. TextureCache + Animation：什么时候不该用引用计数 (983b63e)](#sec-8)
-- [9. 平台无关 FileUtils：搜索路径与分辨率优先级 (1154c98)](#sec-9)
-- [10. 把 OpenGL 抽出来、把默认换成 Vulkan (eb0053e / bd9cdff / 1831a70)](#sec-10)
-- [11. 一些"小"提交里的工程审美](#sec-11)
-  - [11.1 c724ecb —— 删掉冗余构造函数](#sec-11-1)
-  - [11.2 bf4b46a —— 用 std::erase_if 替掉 erase-remove](#sec-11-2)
-  - [11.3 6c1d2b3 —— 把键盘和鼠标拆成两个文件](#sec-11-3)
-- [12. 复盘：3 周 1500 行，到底学到了什么](#sec-12)
+- [1. 起手：接缝必须在第一天划好 (aee61f3)](#sec-1)
+- [2. 系列文章](#sec-2)
+- [3. 一些"小"提交里的工程审美](#sec-3)
+- [4. 复盘：3 周 1500 行，到底学到了什么](#sec-4)
 
 ---
 
@@ -36,14 +21,14 @@
 
 我在游戏行业做 Gameplay / 引擎相关的工作十年，cocos2d-x 是绕不开的一段历史。引擎本身已经"过时"，但它的几套抽象 —— `Ref` + `AutoreleasePool`、`EventDispatcher` 的双优先级链、`Action / ActionInterval` 时间轴、`Scheduler` 的统一回调表 —— 至今仍然是 2D 引擎里非常体面的工程范式。Unity 的 `Coroutine`、UE 的 `Timeline`、Unreal Slate 的事件冒泡，很多设计你能在 cocos2d-x 里找到同源。
 
-但我一直没有亲手把这些东西"长出来"过。读引擎源码和写引擎源码完全是两种理解。所以我把 cocos2d-x 当作设计参考、把 OpenGL/Vulkan 当作渲染后端，在 3 周里写了一个**只保留骨架、可以加载场景、跑动作、绑 Lua、点按钮**的最小化引擎。这篇文章不是"如何写引擎"的教程，而是把每一步**为什么这么写、为什么不那么写**的取舍写下来，作为对自己工作方式的一次外化。
+但我一直没有亲手把这些东西"长出来"过。读引擎源码和写引擎源码完全是两种理解。所以我把 cocos2d-x 当作设计参考、把 OpenGL/Vulkan 当作渲染后端，在 3 周里写了一个**只保留骨架、可以加载场景、跑动作、绑 Lua、点按钮**的最小化引擎。这套博客系列不是"如何写引擎"的教程，而是把每一步**为什么这么写、为什么不那么写**的取舍写下来，作为对自己工作方式的一次外化。
 
 ---
 
 <a id="sec-1"></a>
-## 1. 起手：先让三角形画出来 (`aee61f3`)
+## 1. 起手：接缝必须在第一天划好 (`aee61f3`)
 
-首版只做了三件事：GLFW 开窗、加载 OpenGL 3.3 Core、画一个全屏的正交投影下的四边形。没有场景图，没有事件，没有内存管理。
+首版只做了三件事：GLFW 开窗、加载 OpenGL 3.3 Core、画一个全屏的正交投影下的四边形。没有场景图、没有事件、没有内存管理。
 
 这一版唯一值得说的设计是**两个工厂入口**：
 
@@ -52,312 +37,37 @@ View*         createDefaultView();
 RenderDevice* createDefaultRenderDevice();
 ```
 
-之所以从第一行代码就分离 View（窗口/输入抽象）和 RenderDevice（渲染抽象），是为了**逼自己后面写 Vulkan 的时候没有借口去改 main.cpp**。事实证明这个决定救了我一次：后来切 Vulkan 时，引擎入口完全没动，只有平台层加了一个 `createVulkanRenderDevice()` 的工厂。
+从第一行代码就分离 View（窗口/输入抽象）和 RenderDevice（渲染抽象），是为了**逼自己后面写 Vulkan 的时候没有借口去改 main.cpp**。事实证明这个决定救了我一次：后来切 Vulkan 时，引擎入口完全没动，只有平台层加了一个 `createVulkanRenderDevice()` 的工厂。
 
 > 经验：抽象不一定要一上来就完整，但**接缝**必须在第一天就划好。后期"补一个抽象层"几乎一定要重写两遍。
+
+这条经验贯穿了整个系列：内存模型的多套并存、EventDispatcher 的双优先级链、RHI 的 handle-based 接口、Action 的归一化时间 t —— **它们都是一开始就划在那里的接缝**，后续每加一个功能都从中间穿过，没动过。
 
 ---
 
 <a id="sec-2"></a>
-## 2. 内存管理 + 调度器 (`e8b36a2`)
+## 2. 系列文章
 
-这是项目第二个 commit，也是我个人觉得最重要的一个 —— 它决定了整个引擎"什么时候析构、什么时候推进时间"。
+把原本散在一篇里的 9 个子系统分别展开成独立文章。建议先读完这一篇骨架，再按兴趣点开任何一篇深读 —— 它们之间会互相引用，但每一篇都可独立读。
 
-<a id="sec-2-1"></a>
-### 2.1 Ref + AutoreleasePool：为什么不直接上 `shared_ptr`
-
-```cpp
-class Ref {
-public:
-    void retain();          // ++_referenceCount
-    void release();          // 计数归零时 delete this
-    void autorelease();      // 把自己丢进当前帧的 AutoreleasePool
-private:
-    unsigned int _referenceCount = 1;
-};
-```
-
-如果纯粹从现代 C++ 出发，这一层应该是 `std::shared_ptr` + `std::enable_shared_from_this`。我没用，理由有两个：
-
-1. **Lua 绑定的生命周期**：Lua userdata 的 `__gc` 触发时间是 GC 决定的，可能远晚于 C++ 期望。如果用 `shared_ptr` 共享所有权，Lua 那边一旦多持有一份，引擎想"立刻销毁场景"就做不到。`Ref` 的显式 retain/release 让 C++ 这边永远是主人，Lua 持有的本质是一个弱引用。
-2. **autorelease 的"帧粒度延迟销毁"是 2D 引擎的刚需**。`auto* s = Sprite::create()` 返回的对象不需要调用方关心释放；这一帧结束 pool 一 drain，没人 retain 的就走了。`shared_ptr` 表达不了这种"等一帧"的语义。
-
-代价是显然的：**忘记 retain / 多 release 就会 UAF**。我接受这个代价 —— 复刻 cocos2d-x 的目的之一就是体验这套机制能不能被严肃地用起来。事实是只要约定"任何 `create()` 返回的对象都已经 autoreleased，存到成员里必须 retain"，绝大多数对象的生命周期就是清晰的。
-
-<a id="sec-2-2"></a>
-### 2.2 Scheduler：脏标记 + 待办队列
-
-```cpp
-struct Entry {
-    std::function<void(float)> callback;
-    float interval, delay, elapsed;
-    int   repeat, priority;
-    bool  cancelled;       // <- 这一个 bool 撑起了整个机制
-};
-```
-
-第一版我就踩了一个最经典的坑：**update 过程中调用方在 callback 里又注册/反注册了 entry**。直接对 `_entries` 做 `push_back` 会迭代器失效，对当前正在迭代的 entry 调用 `erase` 也是 UAF。
-
-cocos2d-x 的解法我搬过来了：
-- 注册新 entry → 先丢进 `_pendingEntries`，下一帧合并。
-- 反注册 entry → 只把 `cancelled = true`，真正 erase 留到所有 callback 跑完之后。
-- 优先级排序用 `_dirtyOrder` 脏标记，**整帧只排一次**，避免每次注册都 O(n log n)。
-
-> 这个 pattern 在后面的 `EventDispatcher` 里又出现了一次。**一切"在遍历容器时会修改容器"的系统**都要走这套：暂存写操作 + 软删除 + 脏标记排序。
+| # | 主题 | 一句话内容 |
+|---|---|---|
+| [#3](https://github.com/leafvmaple/blog/issues/3) | mini-cocos 的三套内存模型 | `Ref` + autorelease、手写 refcount、`shared_ptr` 各自在 mini-cocos 里的边界与决策矩阵 |
+| [#4](https://github.com/leafvmaple/blog/issues/4) | 遍历中修改容器的统一 pattern | pending queue + 软删除 + 脏排序，从 Scheduler / EventDispatcher 抽出来到 ECS / RCU / GC |
+| [#5](https://github.com/leafvmaple/blog/issues/5) | EventDispatcher 三次迭代 | 从全局回调表到双优先级链 + 嵌套 dispatch 计数器；命中测试 + modal swallow |
+| [#6](https://github.com/leafvmaple/blog/issues/6) | 渲染队列 sortKey + RHI 抽象 | 64-bit sortKey 一次 sort 同时做透明分段 / state 合并 / z 排序；让 GL "假装"有命令缓冲来对齐 Vulkan |
+| [#7](https://github.com/leafvmaple/blog/issues/7) | Action / ActionInterval | `update(t)` 这个契约让 Sequence / Spawn / Ease / Repeat 变成可代数化组合的时间运算 |
+| [#8](https://github.com/leafvmaple/blog/issues/8) | 资源管线 | FontAtlas 增量光栅化解掉中文 Label 性能陷阱；FileUtils 搜索路径让多分辨率 / 多语言 / mod 成为 ops 配置 |
+| [#9](https://github.com/leafvmaple/blog/issues/9) | 手写 Lua metatable | 跳过 sol2 换来的可控性：编译速度、错误信息、跨边界 lifecycle 的 `alive` 标志位 |
 
 ---
 
 <a id="sec-3"></a>
-## 3. 事件系统的两次迭代 (`fb4300f` → `b3cc36c` → `4b1fc47` 系列)
+## 3. 一些"小"提交里的工程审美
 
-<a id="sec-3-1"></a>
-### 3.1 第一版：裸回调
+这几个 commit 在 commit 历史里看起来没什么 —— 但它们各自代表一种我希望自己长期保持的工程习惯。**新的小型重构默认追加到这一节**（详见 [posts/README.md 的迭代约定](https://github.com/leafvmaple/blog/blob/main/posts/README.md)）。
 
-```cpp
-class EventListener {
-    enum class Type { Keyboard, Mouse };
-    std::function<void(Event&)> onEvent;
-};
-```
-
-第一版我故意写得很糙：所有事件统一 `Event&`，listener 自己判断类型。能跑，但 typed callback 全靠用户 `dynamic_cast`，写应用层非常难受。
-
-<a id="sec-3-2"></a>
-### 3.2 第二版：按类型分子类、callback 字段化
-
-```cpp
-class EventListenerKeyboard : public EventListener {
-public:
-    std::function<void(EventKeyboard&)> onKeyPressed;
-    std::function<void(EventKeyboard&)> onKeyReleased;
-};
-```
-
-为什么不是 virtual `onKeyPressed()` 然后让用户继承？因为这是 cocos2d-x 一个深思熟虑的取舍：**函数对象成员变量**比虚函数继承更容易接 Lua 闭包、更容易做匿名 listener、更容易做"一个对象监听多个事件"。代价是多了一层 `std::function` 的间接调用 —— 但每帧事件数量是个位数到几十，这点开销可以忽略。
-
-<a id="sec-3-3"></a>
-### 3.3 第三版：贴近 cocos2dx 的双链表 EventDispatcher (`4b1fc47` / `db6b6dd` / `90acab7`)
-
-```cpp
-struct EventListenerVector {
-    std::vector<ListenerEntry> _fixedListeners;   // 固定优先级
-    std::vector<ListenerEntry> _nodeListeners;     // 场景图优先级
-    bool _dirtyFixedPriority;
-    bool _dirtyNodePriority;
-};
-std::unordered_map<int /*event type*/, EventListenerVector> _listenerMap;
-```
-
-为什么要把 listener 分成"固定优先级"和"场景图优先级"两条独立的链？
-
-- **固定优先级**：暂停场景的时候不应该被暂停（比如调试 overlay、全局快捷键）；优先级是手动指定的整数。
-- **场景图优先级**：跟 Node 绑定，**z-order 越靠前优先级越高**，自动随场景结构变化。
-
-如果塞进一个链，每次场景图结构变就要全表重排。分开之后：
-- 固定链几乎不变，几乎不需要重排。
-- 场景图链改变时只标脏，等下一次 `dispatchEvent` 触发前再排。
-
-这个设计的影响远不止性能：它让"暂停 / 恢复"语义、"模态弹窗吃掉所有事件"语义都变得可以独立实现，**功能性比性能更重要**。
-
-<a id="sec-3-4"></a>
-### 3.4 父子节点遮挡 (`bacb0f9`)
-
-最后一个 commit 加的是 UI 控件的遮挡关系：点击 Button A 上的 Button B，B 应当先吃到事件，并且阻止 A 收到。
-
-实现的关键是 hit-test 必须**自顶向下用场景图序遍历**，命中即 swallow。要做对这件事，前面那条"按 z-order 排好的 nodeListeners"就直接派上了用场 —— 不需要额外的空间索引，遍历顺序天然就是命中优先级。
-
-> 设计是有复利的。把 EventDispatcher 改成贴近 cocos2dx 的样子，**不是为了像它**，而是因为它的几个看似多余的接缝（priority 链 / 脏标记 / 双链），在后面每加一个功能都帮你省一次重构。
-
----
-
-<a id="sec-4"></a>
-## 4. 渲染队列：用 64-bit sortKey 换掉 struct 比较 (`db7892d`)
-
-```cpp
-struct RenderCommand {
-    RenderCommandType type;
-    RenderSortKey     sortKey;          // (pass << 48) | (layer << 32) | material
-    uint32_t          submissionIndex;
-    union {
-        DrawSpriteCommand sprite;
-        DrawQuadsCommand  quads;
-    };
-};
-```
-
-经典的"位域 sortKey"打包：高位是渲染 pass、中段是图层、低段是材质 hash。排序的时候直接对 `uint64_t` 比较，**一条 CMP 指令搞定**，无需走 `operator<` 的成员比较。
-
-`submissionIndex` 是 stable sort 用的 tiebreak —— 完全相同 sortKey 的命令保持提交顺序，对于 batched 2D 绘制非常重要：不然每帧字形排列都可能跳来跳去。
-
-设计取舍：
-- **没做 instancing**。每个 Sprite 还是一次 draw call。早期工程化 vs 渲染吞吐的拉锯里，我选了易调试 / 易 Lua 化。
-- **没做多线程提交**。Vulkan 后端要做 worker thread 提交是后面的事，先把单线程链路跑稳。
-
-> 工程化经验：**先让正确的事情容易做对，再让重要的事情做得更快**。
-
----
-
-<a id="sec-5"></a>
-## 5. 字体与资源：动态 glyph cache vs 预烘焙图集 (`f91253a` / `3a5bedd`)
-
-```cpp
-class FontAtlas {
-    std::unordered_map<char32_t, GlyphInfo> _glyphs;   // 按 codepoint 缓存
-};
-```
-
-`stb_truetype` 按需光栅化、塞进图集、UV 直接喂给渲染队列。
-
-为什么不用预烘焙的位图字体？
-
-- **中文**。一张包含常用 6k 字的位图集要么巨大要么精度差，按需光栅化对中文场景几乎是必选。
-- **方便切字号**：同一个字号才共享 FontAtlas，不同字号自动各自一份缓存。
-
-代价：第一次出现的字符有一次 raster 开销。对 UI 文本完全可以接受，对漂浮伤害数字这种**字符集很小且固定**的场景，第一次出现后就稳定了。
-
----
-
-<a id="sec-6"></a>
-## 6. Action：把"时间"做成可组合的对象 (`05c476e` / `495a6e9`)
-
-```cpp
-class Action            : public Ref          { virtual void step(float dt) = 0; virtual bool isDone() const = 0; };
-class FiniteTimeAction  : public Action       { float _duration; };
-class ActionInterval    : public FiniteTimeAction {
-    float _elapsed; bool _firstTick;
-    virtual void update(float t) = 0;     // t ∈ [0,1]
-};
-```
-
-这三层继承不是过度设计，每一层都对应一种**根本不同的时间语义**：
-
-| 类 | 何时存在 | 典型例子 |
-|---|---|---|
-| `Action` | 一切受调度的动作的基类 | `CallFunc`（瞬时） |
-| `FiniteTimeAction` | 有"持续时长"概念 | `DelayTime` |
-| `ActionInterval` | 持续时长 + 可插值进度 t | `MoveTo`, `RotateTo`, `FadeIn` |
-
-`update(t)` 用归一化时间而不是 elapsed seconds，是关键设计 —— **它让 `EaseIn / EaseOut / Sequence / Spawn / Repeat` 全都可以无脑组合**。任何 ActionInterval 都可以被 Ease 包一层、被 Repeat 包一层、被 Sequence 串起来。
-
-`495a6e9` 那个"调整 ActionInterval 位置"的小提交，其实就是把这一层的 `update(t)` 抽干净，让 EaseAction 可以正确地"扭曲时间轴"。
-
-> 这一段我最大的体会是：**好的引擎抽象，是让用户写不出错的代码**。Action 体系的接口设计逼着你按"先 Spawn 再 Sequence"的方式去想动画，而不是手写一堆 `if (frame > 30 && frame < 90) ...` 的状态机。
-
----
-
-<a id="sec-7"></a>
-## 7. Lua 绑定：手写胶水 vs sol2 (`eb546b2` / `82839bc`)
-
-我没用 sol2，没用 tolua++，就是手写 metatable：
-
-```cpp
-constexpr const char* kNodeMeta   = "zocos.Node";
-constexpr const char* kSpriteMeta = "zocos.Sprite";
-
-bool isCompatibleMetatable(lua_State* L, int idx, const char* expected) {
-    if (hasMetatable(L, idx, expected)) return true;
-    // 继承链向上兼容：Sprite 也是 Node
-    if (!strcmp(expected, kNodeMeta)) {
-        return hasMetatable(L, idx, kSceneMeta)
-            || hasMetatable(L, idx, kSpriteMeta)
-            || hasMetatable(L, idx, kLabelMeta);
-    }
-    return false;
-}
-```
-
-为什么不用 sol2？
-
-1. **依赖控制**：sol2 是 header-only 但模板展开极重，编译时间惨剧。
-2. **类型兼容**：我希望 Lua 端 `node:addChild(sprite)` 能把 `sprite`（`zocos.Sprite` metatable）当成 `Node` 接受。模板系自动绑定库要么走 RTTI、要么走 CRTP 注册，这一块手写最直观。
-3. **错误消息可控**：手写 type-check 能给出像样的报错（"expected Node, got string"），这是面向 Lua 写应用层最有价值的工程能力之一。
-
-代价当然是写得多 —— 但 mini-cocos 一共也就暴露了十几个类、几十个方法，手写比对 sol2 的模板报错调一周划算多了。
-
----
-
-<a id="sec-8"></a>
-## 8. TextureCache + Animation：什么时候不该用引用计数 (`983b63e`)
-
-```cpp
-struct Entry {
-    TextureHandle texture;
-    Size          pixelSize;
-    int           refCount;     // 手写计数，不继承 Ref
-};
-std::unordered_map<std::string, Entry> _entriesByKey;
-```
-
-**TextureCache 里的 Entry 故意没继承 `Ref`**。
-
-为什么？因为 `Ref::autorelease()` 会让对象等到下一帧才被销毁。GPU 资源的释放时机必须由调用方明确控制 —— 你不希望"加载完场景立刻 unload"的时候，旧场景的纹理还在 GPU 显存里多苟一帧。所以这里走的是**显式的、即时的**手动引用计数。
-
-Animation 则相反：
-
-```cpp
-class Animation : public Ref {
-    std::vector<Rect> _frames;     // 只是 UV 元数据
-    float _delayPerFrame;
-};
-```
-
-它只是一堆元数据，autorelease 完全没问题。
-
-> 这条经验我特意挑出来：**ref-counting 不是宗教，是工具**。**资源**（GPU 显存、文件句柄、socket）的生命周期通常需要确定性释放；**值对象**（动画元数据、配置、消息）才适合丢进 autorelease pool。一套引擎里两种内存模型并存是常态，不是设计缺陷。
-
----
-
-<a id="sec-9"></a>
-## 9. 平台无关 FileUtils：搜索路径与分辨率优先级 (`1154c98`)
-
-```cpp
-class FileUtils {
-    std::vector<std::string> _searchPaths;
-    std::vector<std::string> _searchResolutionsOrder;
-    virtual bool readBinaryFileImpl(const std::string& path, std::vector<unsigned char>& out) const = 0;
-};
-```
-
-`_searchPaths` 和 `_searchResolutionsOrder` 这两组数组是 cocos2d-x 把"资源寻址"做对的核心：
-
-- 调用方写 `loadImage("ui/button.png")`。
-- 框架按 `_searchResolutionsOrder` 拼前缀（`"hd/"`、`"sd/"`），依次试探每个 `_searchPath`。
-
-效果：**同一份代码，换分辨率包就能跑 retina / 普清；换 mod 包就能换皮**。这种"调用方无感的资产路由"是 2D 引擎能不能上规模的一道分水岭。
-
----
-
-<a id="sec-10"></a>
-## 10. 把 OpenGL 抽出来、把默认换成 Vulkan (`eb0053e` / `bd9cdff` / `1831a70`)
-
-```cpp
-class RenderDevice {
-    virtual void          beginFrame(const Mat4& proj, int w, int h)     = 0;
-    virtual void          submit(const RenderCommand& cmd)               = 0;
-    virtual TextureHandle createTexture(const TextureCreateInfo& info)   = 0;
-    virtual void          endFrame()                                     = 0;
-};
-```
-
-抽象做完是 `eb0053e`，下一个 commit (`bd9cdff`) 默认值就切了 Vulkan。
-
-这个顺序我是故意安排的：**抽象的真正难点不是写出抽象类，而是确保你的抽象在第二个实现上能跑通**。一个 RHI 只服务一个后端，等同于没抽象。先抽 OpenGL，再换 Vulkan 做默认，结构上的不合理立刻暴露：
-
-- Vulkan 的 framebuffer 是显式资源，不像 OpenGL 那样有"默认 framebuffer 0"。`beginFrame` 接口被迫拆出 `acquireSwapchainImage` 这一步。
-- Vulkan 的 SPIR-V shader 没有 GLSL 那样的运行时编译。我把最小的 fullscreen quad shader 直接以 SPV 字节常量内联在 `ZCVulkanMinimalSpv.inl` 里，**避免引入运行时 shader 编译依赖**。
-- OpenGL 的 immediate 风格 draw call 和 Vulkan 的 command buffer record 必须收敛到同一个 `submit()` 协议 —— 最后是让 GL 后端假装也有 command buffer（内部立即翻译成 GL call），来对齐 Vulkan 的语义。
-
-`1831a70` 那个"调整 OpenGL 和 Vulkan 代码结构"就是这一轮抽象拉齐的产物。
-
-> 引擎架构的经验：**没有第二个实现，就没有抽象**。第一个实现是设计稿，第二个实现是合格证。
-
----
-
-<a id="sec-11"></a>
-## 11. 一些"小"提交里的工程审美
-
-<a id="sec-11-1"></a>
-### 11.1 `c724ecb` —— 删掉冗余构造函数
+### 3.1 `c724ecb` —— 删掉冗余构造函数
 
 C++17 之后，下面两段几乎等价：
 
@@ -379,8 +89,7 @@ private:
 
 但收益不止少几行：**类内初始化**让"成员的默认值"和"成员的声明"放在同一行，新人读代码不用再跳到构造函数里对照一遍。
 
-<a id="sec-11-2"></a>
-### 11.2 `bf4b46a` —— 用 `std::erase_if` 替掉 erase-remove
+### 3.2 `bf4b46a` —— 用 `std::erase_if` 替掉 erase-remove
 
 ```cpp
 // C++17
@@ -391,28 +100,36 @@ std::erase_if(v, pred);
 
 EventDispatcher 和 Scheduler 里每帧都有这种"清理已取消的 entry"的操作。erase-remove 写多了就会写错（漏 `v.end()`、忘 erase），换成 `std::erase_if` 之后**一行表达完整意图**，没法写错。
 
-<a id="sec-11-3"></a>
-### 11.3 `6c1d2b3` —— 把键盘和鼠标拆成两个文件
+### 3.3 `6c1d2b3` —— 把键盘和鼠标拆成两个文件
 
 把 `EventListenerKeyboard.cpp` 和 `EventListenerMouse.cpp` 从一个文件里劈开，看起来是洁癖，但实际意义是 **链接期把不同平台依赖隔离开**。后面若要做 macOS 移植，鼠标这边可能要走 NSEvent；键盘走 IOKit；分了文件，平台差异就锁在该锁的地方。
 
 ---
 
-<a id="sec-12"></a>
-## 12. 复盘：3 周 1500 行，到底学到了什么
+<a id="sec-4"></a>
+## 4. 复盘：3 周 1500 行，到底学到了什么
 
 如果非要总结成几条对自己之后引擎/Gameplay 工作的提醒：
 
 1. **接缝在第一天划，抽象在第二个实现里完工**。一上来就抽象会过度设计；不抽象会重写两遍。
-2. **"在遍历中修改"的系统**统一走 pending queue + 软删除 + 脏排序。这是引擎里反复出现的模式。
-3. **生命周期不是单一答案**：autorelease 适合值对象、显式 ref-counting 适合 GPU/IO 资源、`shared_ptr` 在嵌入脚本语言的场合反而碍事。
-4. **位域 sortKey、双优先级链、归一化时间 t** 这些"小聪明"，每一个都换来了后面多一个功能的零重构。
+2. **"在遍历中修改"的系统**统一走 pending queue + 软删除 + 脏排序。这是引擎里反复出现的模式（→ [#4](https://github.com/leafvmaple/blog/issues/4)）。
+3. **生命周期不是单一答案**：autorelease 适合值对象、显式 ref-counting 适合 GPU/IO 资源、`shared_ptr` 在嵌入脚本语言的场合反而碍事（→ [#3](https://github.com/leafvmaple/blog/issues/3)）。
+4. **位域 sortKey、双优先级链、归一化时间 t** 这些"小聪明"，每一个都换来了后面多一个功能的零重构（→ [#6](https://github.com/leafvmaple/blog/issues/6) / [#5](https://github.com/leafvmaple/blog/issues/5) / [#7](https://github.com/leafvmaple/blog/issues/7)）。
 5. **API 设计的最高目标是让用户写不出错的代码**。Action 体系是最好的例子。
-6. **没有第二个实现，抽象就是占位符**。OpenGL → Vulkan 这一刀，是整个项目最大的收获之一。
+6. **没有第二个实现，抽象就是占位符**。OpenGL → Vulkan 这一刀，是整个项目最大的收获之一（→ [#6](https://github.com/leafvmaple/blog/issues/6)）。
 
 复刻一个老引擎，从工程结果上看没有任何"产出"—— 不会有用户、也不会有 PR。但从工程能力上看，它逼你把一连串**别人替你做过的取舍**自己再做一遍，并且**自己承担每一个错误决定的后果**。这种经历是读多少源码都换不来的。
 
 接下来准备给 mini-cocos 加的功能是：粒子系统、Spine 骨骼动画、以及一个真正能用 Lua 写完整 demo 的样例工程。等做完再写下一篇。
+
+---
+
+## 迭代记录
+
+<!-- 本主帖的迭代约定见 posts/README.md。子系统级演进追加到对应子篇里；
+     跨子系统的结构变更（新增 RHI 后端、改主循环）在这里追加一句索引。 -->
+
+*暂无。*
 
 ---
 
