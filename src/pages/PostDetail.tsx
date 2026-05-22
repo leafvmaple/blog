@@ -12,6 +12,7 @@ export default function PostDetail() {
   const { number } = useParams<{ number: string }>()
   const { lang } = useLang()
   const t = useT()
+  const labelT = useLabelT()
   const [issue, setIssue] = useState<Issue | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -34,7 +35,6 @@ export default function PostDetail() {
 
   const body = pickLocalized(issue.bodies, lang, issue.body || '')
   const title = pickLocalized(issue.titles, lang, issue.title)
-  const labelT = useLabelT()
   const html = (marked.parse(body) as string).replace(/^<h1[^>]*>.*?<\/h1>\s*/i, '')
 
   return (
