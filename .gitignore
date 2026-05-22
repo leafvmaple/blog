@@ -15,6 +15,9 @@ dist-ssr
 # Snapshotted blog data — regenerated each build by scripts/fetch-posts.mjs
 public/data/
 
+# Claude Code local memory / session data
+.claude/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
