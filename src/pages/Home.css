@@ -121,10 +121,23 @@
   background: rgba(0, 0, 0, 0.08);
 }
 
+.post-pinned-divider {
+  color: #c97a00;
+  font-weight: 600;
+}
+
+.post-pinned-divider::before,
+.post-pinned-divider::after {
+  background: rgba(201, 122, 0, 0.25);
+}
+
 @media (prefers-color-scheme: dark) {
   .post-year-divider { color: #555; }
   .post-year-divider::before,
   .post-year-divider::after { background: rgba(255, 255, 255, 0.08); }
+  .post-pinned-divider { color: #e0a040; }
+  .post-pinned-divider::before,
+  .post-pinned-divider::after { background: rgba(224, 160, 64, 0.25); }
 }
 
 

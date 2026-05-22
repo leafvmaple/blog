@@ -52,12 +52,26 @@ interface PostDetail {
 let postsPromise: Promise<Issue[]> | null = null
 const detailCache = new Map<number, Promise<PostDetail>>()
 
+// Issues carrying this label (case-insensitive) float to the top of the home
+// list, in the same relative order they had among themselves.
+const PIN_LABEL = 'pinned'
+
+export function isPinned(issue: Issue): boolean {
+  return issue.labels.some(l => l.name.toLowerCase() === PIN_LABEL)
+}
+
 function loadAllPosts(): Promise<Issue[]> {
   if (!postsPromise) {
-    postsPromise = fetch(`${DATA_BASE}/posts.json`, { cache: 'no-cache' }).then(res => {
-      if (!res.ok) throw new Error(`Failed to fetch posts: ${res.status}`)
-      return res.json() as Promise<Issue[]>
-    })
+    postsPromise = fetch(`${DATA_BASE}/posts.json`, { cache: 'no-cache' })
+      .then(res => {
+        if (!res.ok) throw new Error(`Failed to fetch posts: ${res.status}`)
+        return res.json() as Promise<Issue[]>
+      })
+      .then((arr: Issue[]) => {
+        const pinned = arr.filter(isPinned)
+        const rest = arr.filter(i => !isPinned(i))
+        return [...pinned, ...rest]
+      })
   }
   return postsPromise
 }

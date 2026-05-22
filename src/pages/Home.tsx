@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { getIssues, type Issue } from '../api'
+import { getIssues, isPinned, type Issue } from '../api'
 import Post from '../components/Post'
 import { useT } from '../i18n'
 import './Home.css'
@@ -47,10 +47,21 @@ export default function Home() {
     if (page > 1) loadPage(page)
   }, [page, loadPage])
 
-  // Group issues by year with dividers
-  const rows: Array<{ type: 'year'; year: number } | { type: 'post'; issue: Issue }> = []
+  // Pinned posts sit in their own group at the top; the rest are grouped by year.
+  const pinnedIssues = issues.filter(isPinned)
+  const datedIssues = issues.filter(i => !isPinned(i))
+
+  const rows: Array<
+    | { type: 'pinned-header' }
+    | { type: 'year'; year: number }
+    | { type: 'post'; issue: Issue; pinned?: boolean }
+  > = []
+  if (pinnedIssues.length > 0) {
+    rows.push({ type: 'pinned-header' })
+    for (const issue of pinnedIssues) rows.push({ type: 'post', issue, pinned: true })
+  }
   let lastYear: number | null = null
-  for (const issue of issues) {
+  for (const issue of datedIssues) {
     const year = new Date(issue.created_at).getFullYear()
     if (year !== lastYear) {
       rows.push({ type: 'year', year })
@@ -64,15 +75,23 @@ export default function Home() {
       <h2 className="home-section-title">{t.home_title}</h2>
       {error && <div className="home-error">{t.load_failed}</div>}
       <div className="post-list">
-        {rows.map(row =>
-          row.type === 'year'
-            ? (
+        {rows.map(row => {
+          if (row.type === 'pinned-header') {
+            return (
+              <div key="pinned-header" className="post-year-divider post-pinned-divider">
+                <span>📌 {t.home_pinned}</span>
+              </div>
+            )
+          }
+          if (row.type === 'year') {
+            return (
               <div key={`year-${row.year}`} className="post-year-divider">
                 <span>{row.year}</span>
               </div>
             )
-            : <Post key={row.issue.id} issue={row.issue} />
-        )}
+          }
+          return <Post key={`${row.pinned ? 'pin-' : ''}${row.issue.id}`} issue={row.issue} />
+        })}
       </div>
       {loading && <div className="home-loading">{t.loading}</div>}
       {!hasMore && issues.length > 0 && <div className="home-end">{t.all_posts_loaded}</div>}
