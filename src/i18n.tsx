@@ -219,11 +219,13 @@ export const LABEL_T: Record<Lang, Record<string, string>> = {
     'game-engine': '游戏引擎',
     'rendering': '渲染',
     'recap': '复盘',
+    'pinned': '置顶',
   },
   ja: {
     'game-engine': 'ゲームエンジン',
     'rendering': 'レンダリング',
     'recap': '振り返り',
+    'pinned': 'ピン留め',
   },
 }
 
