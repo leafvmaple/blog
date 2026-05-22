@@ -80,7 +80,9 @@ Remove-Item tmp_body.md
 
 ## 系列连载与迭代约定
 
-随项目（特别是引擎类长期项目，如 [mini-cocos](https://github.com/leafvmaple/mini-cocos)）持续演进，需要明确："**什么时候开新文，什么时候改旧文**"，以保证博客既能反映最新认知，又能记录思考的成长轨迹。下面这套约定从 mini-cocos 系列开始使用，未来其它长期项目可复用同一套规则。
+随项目（特别是引擎/内核类长期项目，如 [mini-cocos](https://github.com/leafvmaple/mini-cocos) 和 [zonix-plus](https://github.com/leafvmaple/zonix-plus)）持续演进，需要明确："**什么时候开新文，什么时候改旧文**"，以保证博客既能反映最新认知，又能记录思考的成长轨迹。下面这套约定从 mini-cocos 系列开始使用，已复用到 zonix-plus 系列（主索引帖 #11，子篇 #12–#18），未来其它长期项目可复用同一套规则。
+
+> 当前两个系列的主索引帖：mini-cocos = #2，zonix-plus = #11。每个系列的子篇 commit 引用各自指向对应仓库（`mini-cocos` / `zonix-plus`）。
 
 ### Rule A — 主题锁定
 
