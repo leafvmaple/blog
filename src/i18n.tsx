@@ -207,7 +207,7 @@ export function pickLocalized<T extends string>(
   fallback: T,
 ): T {
   if (!map) return fallback
-  return map[lang] ?? map[DEFAULT_LANG] ?? map.zh ?? map.ja ?? fallback
+  return map[lang] ?? map[DEFAULT_LANG] ?? map.ja ?? fallback
 }
 
 // Per-language label display names. Keys are the canonical English label names
