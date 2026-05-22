@@ -203,7 +203,7 @@ modal 不依赖 scene-graph 顺序（dialog 可能 z 序低但逻辑上覆盖一
 
 <!-- 后续 EventDispatcher 的演进追加在这里。bubble 阶段、手势识别合成、多 touch 优化等。 -->
 
-*暂无。*
+- 2026-05-22：[`67633ba`](https://github.com/leafvmaple/mini-cocos/commit/67633ba) 顺手清理 EventDispatcher —— 把 dispatch 路径里几处重复的 priority 比较 / `_inDispatch` 检查合并，header 里把不再需要外露的 helper 收回 private。行为无变化，纯结构整理。本文第 3 节里那套"三件套"代码骨架基本就是清理后的样子。
 
 ---
 

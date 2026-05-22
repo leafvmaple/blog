@@ -147,7 +147,7 @@ mini-cocos では下表に従ってメモリモデルを決めます。新型を
 
 <!-- 今後 mini-cocos のメモリ管理面の進化を、時系列逆順で 1 行ずつ追記。commit リンク + 一言説明。 -->
 
-*まだ無し。*
+- 2026-05-22：[`be88a31`](https://github.com/leafvmaple/mini-cocos/commit/be88a31) でエンジン全体の STL 呼び出しを `std::` から `mstd::` 別名へ集約（[zstl](https://github.com/leafvmaple/zstl) サブモジュールにバックされる）、自作 OS への組み込みへの下地を作る。切ったのは「標準ライブラリ依存」の縫い目、本稿が論じる「オブジェクトライフタイム」の縫い目とは直交。詳細は [#10 Freestanding STL via mstd/zstl](https://github.com/leafvmaple/blog/issues/10) を参照。
 
 ---
 

@@ -233,7 +233,8 @@ fence シグナル → pending deletion 処理
 
 <!-- 今後のレンダリング層 / RHI の進化をここに追記。Metal バックエンド、indirect draw、render graph など。 -->
 
-*まだ無し。*
+- 2026-05-22：パッチ [`660ea45`](https://github.com/leafvmaple/mini-cocos/commit/660ea45) —— `Renderer::flush` 内の `transformVerts` が Label をまたぐバッチマージ時に `Color4B` を落としていた。結果、マージ後は全 alpha が 255 にリセットされ Label 不透明度が飛ぶ。sortKey + バッチマージ設計の**同一 per-vertex 属性は transform パスで一括同期しなくてはならない**という要請が露出した事例。見落としソース一コードだがそのまま視覚 bug になる。
+- 2026-05-22：[`155f650`](https://github.com/leafvmaple/mini-cocos/commit/155f650) Label に**atlas page をまたぐ quad バッチマージ**を導入。これまで Label がページごとに RenderCommand を emit していたため、ページ跨ぎテキストは N 本の cmd に分裂していた；今回 Label 内部でページ単位バケットに現わし、ページごと 1 本の cmd、Label 間では Renderer 層で隣接同 page 同 material の cmd をさらにマージ。伴って sprite 専用 shader（`shaders/vulkan/sprite.{vert,frag}`）と `tools/compile_shaders.ps1` も追加、OpenGL / Vulkan バックエンドに sprite pipeline パスを付与。これにより「数千文字の Label が数千 draw call に退化しない」が成り立つ。
 
 ---
 

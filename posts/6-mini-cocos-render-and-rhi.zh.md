@@ -233,7 +233,8 @@ fence 信号回来 → 处理 pending deletion
 
 <!-- 后续渲染层 / RHI 的演进追加在这里。Metal 后端、indirect draw、render graph 等。 -->
 
-*暂无。*
+- 2026-05-22：补丁 [`660ea45`](https://github.com/leafvmaple/mini-cocos/commit/660ea45) —— `Renderer::flush` 里的 `transformVerts` 在合并跨 Label 批次时漏掉了 `Color4B`，结果"批合并后 alpha 全部回 255"、Label 透明度被吃掉。这是 sortKey + 批合并设计天生暴露的角：**任何 per-vertex 属性都必须在 transform 那一段同步**，漏一项就是一个隐蔽的视觉 bug。
+- 2026-05-22：[`155f650`](https://github.com/leafvmaple/mini-cocos/commit/155f650) 给 Label 加上**跨 atlas page 的 quad 批合并**：从前每个 Label 自己 emit 1 个 RenderCommand，多 page 时一段文本会被切成 N 条 cmd；现在 Label 内部按 page 分桶，每个 page 一条 cmd，跨 Label 在 Renderer 这一层再合并相邻同 page 同 material 的 cmd。配套引入了独立的 sprite shader（`shaders/vulkan/sprite.{vert,frag}`）+ `tools/compile_shaders.ps1`，OpenGL 和 Vulkan 后端各加了一条 sprite pipeline 路径。这一改让"几千字 Label 不退化为几千 draw call"成为可能。
 
 ---
 

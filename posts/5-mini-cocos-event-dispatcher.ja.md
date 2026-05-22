@@ -203,7 +203,7 @@ modal は scene-graph 順に依存しない（dialog は z 順が低くても論
 
 <!-- 今後の EventDispatcher の進化をここに追記。bubble 段階、ジェスチャ識別合成、マルチ touch 最適化など。 -->
 
-*まだ無し。*
+- 2026-05-22：[`67633ba`](https://github.com/leafvmaple/mini-cocos/commit/67633ba) EventDispatcher のちょっとした整理 —— dispatch パス中の重複する priority 比較 / `_inDispatch` チェックを一本化、外部公開不要の helper を private にもどした。振る舞い不変、純粋に構造整理。本稿§3 のコード骨格はちょうどこの整理後の姿。
 
 ---
 

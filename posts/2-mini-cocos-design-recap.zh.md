@@ -59,6 +59,7 @@ RenderDevice* createDefaultRenderDevice();
 | [#7](https://github.com/leafvmaple/blog/issues/7) | Action / ActionInterval | `update(t)` 这个契约让 Sequence / Spawn / Ease / Repeat 变成可代数化组合的时间运算 |
 | [#8](https://github.com/leafvmaple/blog/issues/8) | 资源管线 | FontAtlas 增量光栅化解掉中文 Label 性能陷阱；FileUtils 搜索路径让多分辨率 / 多语言 / mod 成为 ops 配置 |
 | [#9](https://github.com/leafvmaple/blog/issues/9) | 手写 Lua metatable | 跳过 sol2 换来的可控性：编译速度、错误信息、跨边界 lifecycle 的 `alive` 标志位 |
+| [#10](https://github.com/leafvmaple/blog/issues/10) | Freestanding STL via mstd / zstl | 把全引擎的 `std::` 调用收敛到 `mstd::` 别名，背靠 [zstl](https://github.com/leafvmaple/zstl) 子模块，为"把 mini-cocos 嵌进自制 OS"打地基 |
 
 ---
 
@@ -129,7 +130,8 @@ EventDispatcher 和 Scheduler 里每帧都有这种"清理已取消的 entry"的
 <!-- 本主帖的迭代约定见 posts/README.md。子系统级演进追加到对应子篇里；
      跨子系统的结构变更（新增 RHI 后端、改主循环）在这里追加一句索引。 -->
 
-*暂无。*
+- 2026-05-22：新增子篇 [#10 Freestanding STL via mstd/zstl](https://github.com/leafvmaple/blog/issues/10)。这不是某个子系统内部的演进，而是跨子系统的一条新接缝——把 `std::` 调用收敛到 `mstd::` 别名（背靠新引入的 [zstl](https://github.com/leafvmaple/zstl) 子模块），为未来把 mini-cocos 嵌进自制 OS 作为 UI 框架做准备。现阶段 hosted 构建与之前完全等价。
+- 2026-05-22：一批渲染层 + Label 重构（[`155f650`](https://github.com/leafvmaple/mini-cocos/commit/155f650) / [`6e06290`](https://github.com/leafvmaple/mini-cocos/commit/6e06290) / [`67633ba`](https://github.com/leafvmaple/mini-cocos/commit/67633ba) 等）—— Label 结构靠齐 cocos2d-x、`FontAtlasCache` 抽出、Renderer 跨 Label 批合并、ActionInterval / EventDispatcher 顺手去重。详见各子篇（[#6](https://github.com/leafvmaple/blog/issues/6) / [#7](https://github.com/leafvmaple/blog/issues/7) / [#8](https://github.com/leafvmaple/blog/issues/8) / [#5](https://github.com/leafvmaple/blog/issues/5)）迭代记录节。
 
 ---
 

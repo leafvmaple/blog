@@ -288,7 +288,7 @@ Action は `target` と `elapsed` の状態を持ち、再入不可。2 つの N
 
 <!-- 今後の Action システムの進化をここに追記。Tween path、Bezier、カスタム ease など。 -->
 
-*まだ無し。*
+- 2026-05-22：[`67633ba`](https://github.com/leafvmaple/mini-cocos/commit/67633ba) `ActionInterval` から約 80 行の重複コードを削除 —— 元の版では `step()` / `update()` / 境界処理が MoveTo / FadeIn / Sequence それぞれに重複実装されていた。今回基底クラスの step テンプレートに集約、サブクラスは `update(t)` だけを override。本稿§2 で示した「骨格」はちょうどこの清理後の姿。実際、本稿を書き上げてからコードを見て重複に気づき、その場で清めた——ブログを書くとコードを逆に推し進める。
 
 ---
 

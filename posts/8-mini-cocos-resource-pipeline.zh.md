@@ -248,7 +248,9 @@ Windows 不分大小写、Linux/Android 分。开发期 Windows 上 `load("UI/Bu
 
 <!-- 后续资源管线的演进追加在这里。异步加载、依赖图、压缩等。 -->
 
-*暂无。*
+- 2026-05-22：[`fc43261`](https://github.com/leafvmaple/mini-cocos/commit/fc43261) Label + Lua/UI binding 的零碎清理（Label 头里删掉两处用不到的 friend、UIButton 跟着 Label 字号 API 改名做了同步）。
+- 2026-05-22：[`155f650`](https://github.com/leafvmaple/mini-cocos/commit/155f650) 新增 `FontAtlasCache` —— 在 `FontAtlas` 之上做"(face + 字号)" key 复用。从前同一种 ttf 不同字号会各开一份 atlas，加上半透明 UI 多种字号的常见配置，atlas page 数能爆到 8+；加了 cache 之后退化到 2~3 个。FontAtlasCache 同时是 Renderer 跨 Label 批合并能成立的前提（同字体同字号的两个 Label 共用 atlas page，cmd 才能合并）。配套地 Label 重写为"按 page 分桶 emit"，详见 [#6 渲染层迭代记录](https://github.com/leafvmaple/blog/issues/6)。
+- 2026-05-22：[`6e06290`](https://github.com/leafvmaple/mini-cocos/commit/6e06290) + [`1e8f941`](https://github.com/leafvmaple/mini-cocos/commit/1e8f941) Label 和 FontAtlas 结构重排向 cocos2d-x 原版靠齐 —— 把原本写在 Label 里的字符布局推回 FontAtlas（让"我有哪些字、它们的 advance/uv 是什么"集中在一处），Label 这边只剩"按 atlas 的查询结果生成顶点"。这一刀让后续"换字体""换 shader""做富文本"全部成本下降一个量级。
 
 ---
 

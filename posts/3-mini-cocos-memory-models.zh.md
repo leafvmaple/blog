@@ -147,7 +147,7 @@ mini-cocos 里我用下面这张表做内存模型的决策。新增类型时按
 
 <!-- 后续 mini-cocos 在内存管理上的演进追加在这里，按时间倒序。每条带 commit 链接 + 一两句话说明。 -->
 
-*暂无。*
+- 2026-05-22：[`be88a31`](https://github.com/leafvmaple/mini-cocos/commit/be88a31) 把全引擎的 STL 调用从 `std::` 收敛到 `mstd::` 别名（背靠 [zstl](https://github.com/leafvmaple/zstl) 子模块），为把 mini-cocos 嵌进自制 OS 做铺垫。这一刀切的是"标准库依赖"那条接缝，和本文讨论的"对象生命周期"接缝正交。详见 [#10 Freestanding STL via mstd/zstl](https://github.com/leafvmaple/blog/issues/10)。
 
 ---
 
