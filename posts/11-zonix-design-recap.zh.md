@@ -165,6 +165,7 @@ Result<int> fd = TRY(files.alloc(file));   // 出错直接 return Error，成功
 | [#16](https://github.com/leafvmaple/blog/issues/16) | 同步原语栈 | Spinlock（关中断 + TAS）→ WaitQueue（侵入式链表）→ Semaphore / Mutex；单核内核为什么还需要 spinlock，以及 lost-wakeup 的防范 |
 | [#17](https://github.com/leafvmaple/blog/issues/17) | freestanding C++ 内核 | 全局 `new`/`delete` 走 kmalloc、`.init_array` 跑全局构造、`cxxrt` 运行时桩、`Result<T>`/`TRY`、GCC→Clang/LLD 工具链迁移 |
 | [#18](https://github.com/leafvmaple/blog/issues/18) | 用户态 ELF 执行 + 系统调用 | 把不可信 ELF 请进 ring 3：用户地址空间（共享高半区内核映射）、ELF 加载的两条安全线、复用 #12 的 `trapret` 靠 `iretq` 降权、syscall ABI 单一真相源、"永不相信用户指针"的信任边界 |
+| [#20](https://github.com/leafvmaple/blog/issues/20) **(配套工具链)** | zcc：编出来跑在 Zonix 上的 ELF 的 C 编译器 | 3,100 行 C++ 实现 SysY/C0 子集前端 + LLVM IR 后端 + 自带 freestanding runtime（`crt0`/`linker.ld`/`libzccrt.a`），与 Zonix 共享一份 `syscall.h` 完成体系闭环。**zcc 是独立仓库、独立子系列**，子篇 #21（ABI 接缝）/#22（LLVM codegen）/#23（C0 演进） |
 
 ---
 
@@ -185,7 +186,9 @@ Result<int> fd = TRY(files.alloc(file));   // 出错直接 return Error，成功
 
 6. **`Result<T>` + `TRY` 的运行时开销几乎为 0**。`Result<T>` 是带 `[[nodiscard]]` 的 POD、`TRY` 是宏 + 语句表达式而非 lambda、`Error` 是 `enum class : int`。三者合起来：成功路径相比裸 `int` 多一次寄存器加载（ok 标志），失败路径多一次条件分支。代价换回的是 [`b1ea334`](https://github.com/leafvmaple/zonix-plus/commit/b1ea334) 之前"`if (ret)` 写成 `if (!ret)`"这类 silent 错误码 bug 在编译期被 `-Wunused-result` 直接打掉（详见 [#17](https://github.com/leafvmaple/blog/issues/17)）。
 
-> **2026-05 更新**：上一版这里写"接下来想尝试跑一个真正的用户态 ELF"，现在它落地了。`exec` 子系统能把磁盘上一个不可信的 ELF 请进隔离地址空间、降到 ring 3 跑起来，并通过系统调用回到内核（→ 新增子篇 [#18](https://github.com/leafvmaple/blog/issues/18)）。配套接入了一个**自研 C 编译器 zcc**（[独立仓库](https://github.com/leafvmaple/zcc)，作为子模块）来编译用户程序 —— 内核 + 编译器构成了"自己的编译器编译跑在自己内核上的程序"的雏形自举链。下一步：调度器抢占全链路验证、riscv64 PLIC 补齐、zcc 的 C 子集扩到能编 busybox 子集。
+7. **自举链的物证是一份 6 行的 `syscall.h`，不是 zcc 的 1,500 行 codegen**。zcc 编出来的 ELF 能被 Zonix `exec()` 加载并跑通 `printf("Hello\n")` 这条链路，唯一**会跨边界漂移**的常量约定是 6 个系统调用号——它们由 zcc 仓库 `src/runtime/syscall.h` 和 Zonix 仓库 `include/abi/syscall.h` 各保留一份物理拷贝，号码同形，由 [`scripts/check_syscall_abi_sync.sh`](https://github.com/leafvmaple/zonix-plus/blob/main/scripts/check_syscall_abi_sync.sh) 在 `make user` 时自动验证两边一致。**两份物理文件、一份逻辑契约、自动化兜底**——这条接缝的诚实复盘（包括 crt0 里 `NR_EXIT = 1` 字面量没进契约这种当前未自动化覆盖的细节）放在 [#21](https://github.com/leafvmaple/blog/issues/21)。
+
+> **2026-05 更新**：上一版这里写"接下来想尝试跑一个真正的用户态 ELF"，现在它落地了。`exec` 子系统能把磁盘上一个不可信的 ELF 请进隔离地址空间、降到 ring 3 跑起来，并通过系统调用回到内核（→ 新增子篇 [#18](https://github.com/leafvmaple/blog/issues/18)）。配套的**自研 C 编译器 zcc**（独立仓库，作为子模块）也从"另一个大坑"独立成了完整子系列 [#20](https://github.com/leafvmaple/blog/issues/20)——内核 + 编译器构成了"自己的编译器编译跑在自己内核上的程序"的雏形自举链。下一步：调度器抢占全链路验证、riscv64 PLIC 补齐、zcc 的 C 子集扩到能编 busybox 子集。
 
 ---
 
@@ -194,6 +197,7 @@ Result<int> fd = TRY(files.alloc(file));   // 出错直接 return Error，成功
 <!-- 本主帖是索引 + 元经验帖，不沉淀具体子系统结论。子系统级演进追加到对应子篇；
      跨子系统的结构变更（新增架构、改 init 流程）在这里追加一句索引。 -->
 
+- 2026-05-23：配套工具链 **zcc** 从 [#18 §6](https://github.com/leafvmaple/blog/issues/18) 的一笔带过独立成完整子系列：主索引帖 [#20](https://github.com/leafvmaple/blog/issues/20) + 子篇 [#21](https://github.com/leafvmaple/blog/issues/21) ABI 接缝 / [#22](https://github.com/leafvmaple/blog/issues/22) LLVM codegen / [#23](https://github.com/leafvmaple/blog/issues/23) C0 演进。同时新增 [`scripts/check_syscall_abi_sync.sh`](https://github.com/leafvmaple/zonix-plus/blob/main/scripts/check_syscall_abi_sync.sh) + `user/Makefile` 钩子，自动验证 zcc / Zonix 两份 `syscall.h` 同步（见 §5 第 7 条 + [#21 §3](https://github.com/leafvmaple/blog/issues/21)）。
 - 2026-05-22：新增正交子系统 **用户态 ELF 执行 + 系统调用**，开子篇 [#18](https://github.com/leafvmaple/blog/issues/18)。这是项目从"只跑内核线程"到"能跑不可信用户进程"的质变（[`295581b`](https://github.com/leafvmaple/zonix-plus/commit/295581b) exec、[`56af896`](https://github.com/leafvmaple/zonix-plus/commit/56af896) syscall ABI、[`9a321a9`](https://github.com/leafvmaple/zonix-plus/commit/9a321a9) 接入 zcc 编译器子模块）。它兑现了 [#12](https://github.com/leafvmaple/blog/issues/12) 当初为内核线程划好的 `arch_setup_user_tf` / `trapret` 接缝——加用户态时这条路径一行没改。
 - 2026-04-07：[`2422311`](https://github.com/leafvmaple/zonix-plus/commit/2422311) 加入 **riscv64** 第三个架构，[`5b32167`](https://github.com/leafvmaple/zonix-plus/commit/5b32167) 补板级抽象。这是对 [#15](https://github.com/leafvmaple/blog/issues/15) 所述 HAL 接缝的又一次验证：`kernel/` 核心几乎零改动。
 - 2026-04-07：[`ff916fa`](https://github.com/leafvmaple/zonix-plus/commit/ff916fa) / [`b1ea334`](https://github.com/leafvmaple/zonix-plus/commit/b1ea334) 全内核错误处理从 `int` 返回码迁移到 `Result<T>` + `TRY`（见 §3 与 [#17](https://github.com/leafvmaple/blog/issues/17)）。这是跨子系统的横切变更，对每个子篇的具体影响写在各自迭代记录里。

@@ -165,6 +165,7 @@ Result<int> fd = TRY(files.alloc(file));   // エラーなら即 return、成功
 | [#16](https://github.com/leafvmaple/blog/issues/16) | 同期プリミティブのスタック | Spinlock（割り込み無効化 + TAS）→ WaitQueue（侵入型リスト）→ Semaphore / Mutex。単一コアカーネルでなぜ spinlock が要るか、lost-wakeup の防止 |
 | [#17](https://github.com/leafvmaple/blog/issues/17) | freestanding C++ カーネル | グローバル `new`/`delete` を kmalloc へ、`.init_array` でグローバルコンストラクタ実行、`cxxrt` ランタイムスタブ、`Result<T>`/`TRY`、GCC→Clang/LLD ツールチェーン移行 |
 | [#18](https://github.com/leafvmaple/blog/issues/18) | ユーザーモード ELF 実行 + システムコール | 信頼できない ELF を ring 3 へ：ユーザーアドレス空間（高位半カーネルマッピング共有）、ELF ロードの二本の安全線、#12 の `trapret` を再利用し `iretq` で降格、syscall ABI 唯一の真実源、「ユーザーポインタを決して信じない」信頼境界 |
+| [#20](https://github.com/leafvmaple/blog/issues/20) **(配套ツールチェーン)** | zcc：Zonix で走らせる ELF を吐く C コンパイラ | 3,100 行の C++ で SysY/C0 サブセットフロントエンド + LLVM IR 後段 + 自前 freestanding runtime（`crt0`/`linker.ld`/`libzccrt.a`）、Zonix と 1 枚の `syscall.h` を共有して体系閉環。**zcc は独立リポジトリ、独立サブシリーズ**、記事 #21（ABI 継ぎ目）/#22（LLVM codegen）/#23（C0 進化） |
 
 ---
 
@@ -185,7 +186,9 @@ Result<int> fd = TRY(files.alloc(file));   // エラーなら即 return、成功
 
 6. **`Result<T>` + `TRY` のランタイムオーバーヘッドはほぼ 0**。`Result<T>` は `[[nodiscard]]` を付けた POD、`TRY` は lambda ではなくマクロ + 文式、`Error` は `enum class : int`。三つ合わせると：成功経路は裸の `int` に比べてレジスタ読み込みが 1 回（ok フラグ）増え、失敗経路は条件分岐が 1 回増えるだけ。代償として得たのは、[`b1ea334`](https://github.com/leafvmaple/zonix-plus/commit/b1ea334) 以前の「`if (ret)` を `if (!ret)` と書き間違える」類の silent エラーコードバグが、コンパイル時に `-Wunused-result` で直接打ち落とされること（詳細は [#17](https://github.com/leafvmaple/blog/issues/17)）。
 
-> **2026-05 更新**：前版ここに「本物のユーザーモード ELF を走らせる試み」と書いたが、今やそれが実現した。`exec` サブシステムはディスク上の信頼できない ELF を隔離アドレス空間へ招き、ring 3 へ降格して走らせ、システムコールでカーネルへ戻れる（→ 新規記事 [#18](https://github.com/leafvmaple/blog/issues/18)）。併せて**自作 C コンパイラ zcc**（[独立リポジトリ](https://github.com/leafvmaple/zcc)、サブモジュール）を統合してユーザープログラムをコンパイル —— カーネル + コンパイラで「自作コンパイラが自作カーネル上で走るプログラムをコンパイルする」雛形のブートストラップ鎖を構成する。次：スケジューラのプリエンプション全経路検証、riscv64 PLIC の補完、zcc の C サブセットを busybox サブセットがコンパイルできる程度まで拡張。
+7. **ブートストラップ鎖の物証は 6 行の `syscall.h`、zcc の 1,500 行 codegen ではない**。zcc が吐いた ELF が Zonix `exec()` でロードされ `printf("Hello\n")` を通せる経路で、**境界をまたいでずれ得る**常数の取り決めは 6 つのシステムコール番号だけ —— それらは zcc リポジトリの `src/runtime/syscall.h` と Zonix リポジトリの `include/abi/syscall.h` がそれぞれ物理コピーを保ち、番号同形、[`scripts/check_syscall_abi_sync.sh`](https://github.com/leafvmaple/zonix-plus/blob/main/scripts/check_syscall_abi_sync.sh) が `make user` 時に両者の一致を自動検証。**二つの物理ファイル、一つの論理契約、自動化兜底** —— この継ぎ目の誠実な振り返り（crt0 の `NR_EXIT = 1` リテラルが契約に入っていないという現状未自動化の細部を含む）は [#21](https://github.com/leafvmaple/blog/issues/21) に。
+
+> **2026-05 更新**：前版ここに「本物のユーザーモード ELF を走らせる試み」と書いたが、今やそれが実現した。`exec` サブシステムはディスク上の信頼できない ELF を隔離アドレス空間へ招き、ring 3 へ降格して走らせ、システムコールでカーネルへ戻れる（→ 新規記事 [#18](https://github.com/leafvmaple/blog/issues/18)）。併せて**自作 C コンパイラ zcc**（独立リポジトリ、サブモジュール）も「もう一つの大きな穴」から完全なサブシリーズ [#20](https://github.com/leafvmaple/blog/issues/20) に独立 —— カーネル + コンパイラで「自作コンパイラが自作カーネル上で走るプログラムをコンパイルする」雛形のブートストラップ鎖を構成する。次：スケジューラのプリエンプション全経路検証、riscv64 PLIC の補完、zcc の C サブセットを busybox サブセットがコンパイルできる程度まで拡張。
 
 ---
 
@@ -194,6 +197,7 @@ Result<int> fd = TRY(files.alloc(file));   // エラーなら即 return、成功
 <!-- 本記事はインデックス + メタ経験の記事であり、具体的サブシステムの結論は蓄積しない。
      サブシステム単位の進化は各記事へ。横断的な構造変更（アーキ追加、init 変更）はここに 1 行索引。 -->
 
+- 2026-05-23：配套ツールチェーン **zcc** が [#18 §6](https://github.com/leafvmaple/blog/issues/18) の一筆紹介から完全なサブシリーズに独立：メインインデックス [#20](https://github.com/leafvmaple/blog/issues/20) + 記事 [#21](https://github.com/leafvmaple/blog/issues/21) ABI 継ぎ目 / [#22](https://github.com/leafvmaple/blog/issues/22) LLVM codegen / [#23](https://github.com/leafvmaple/blog/issues/23) C0 進化。同時に新規追加 [`scripts/check_syscall_abi_sync.sh`](https://github.com/leafvmaple/zonix-plus/blob/main/scripts/check_syscall_abi_sync.sh) + `user/Makefile` フック、zcc / Zonix 二つの `syscall.h` 同期を自動検証（§5 第 7 条 + [#21 §3](https://github.com/leafvmaple/blog/issues/21) 参照）。
 - 2026-05-22：直交する新サブシステム **ユーザーモード ELF 実行 + システムコール** を追加、記事 [#18](https://github.com/leafvmaple/blog/issues/18) を起こす。「カーネルスレッドのみ」から「信頼できないユーザープロセスを走らせる」への質的転換（[`295581b`](https://github.com/leafvmaple/zonix-plus/commit/295581b) exec、[`56af896`](https://github.com/leafvmaple/zonix-plus/commit/56af896) syscall ABI、[`9a321a9`](https://github.com/leafvmaple/zonix-plus/commit/9a321a9) zcc コンパイラサブモジュール統合）。[#12](https://github.com/leafvmaple/blog/issues/12) が当初カーネルスレッドのために引いた `arch_setup_user_tf` / `trapret` 継ぎ目を実現 —— ユーザーモード追加時この経路は一行も変わらなかった。
 - 2026-04-07：[`2422311`](https://github.com/leafvmaple/zonix-plus/commit/2422311) で **riscv64** という三つ目のアーキテクチャを追加、[`5b32167`](https://github.com/leafvmaple/zonix-plus/commit/5b32167) でボード抽象を補完。[#15](https://github.com/leafvmaple/blog/issues/15) で述べる HAL 継ぎ目のさらなる検証であり、`kernel/` コアはほぼ無変更。
 - 2026-04-07：[`ff916fa`](https://github.com/leafvmaple/zonix-plus/commit/ff916fa) / [`b1ea334`](https://github.com/leafvmaple/zonix-plus/commit/b1ea334) で全カーネルのエラー処理を `int` 戻り値から `Result<T>` + `TRY` へ移行（§3 と [#17](https://github.com/leafvmaple/blog/issues/17) 参照）。横断的変更であり、各サブシステムへの影響は各記事の更新履歴に記す。

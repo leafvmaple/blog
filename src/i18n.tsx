@@ -230,6 +230,9 @@ export const LABEL_T: Record<Lang, Record<string, string>> = {
     'syscall': '系统调用',
     'user-mode': '用户态',
     'elf': 'ELF',
+    'compiler': '编译器',
+    'llvm': 'LLVM',
+    'parser': '词法语法',
   },
   ja: {
     'game-engine': 'ゲームエンジン',
@@ -243,6 +246,12 @@ export const LABEL_T: Record<Lang, Record<string, string>> = {
     'boot': 'ブート',
     'multi-arch': 'マルチアーキ',
     'toolchain': 'ツールチェーン',
+    'syscall': 'システムコール',
+    'user-mode': 'ユーザーモード',
+    'elf': 'ELF',
+    'compiler': 'コンパイラ',
+    'llvm': 'LLVM',
+    'parser': '字句構文解析',
   },
 }
 
