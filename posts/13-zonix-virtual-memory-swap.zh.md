@@ -1,24 +1,22 @@
-# 把换出页号塞进 PTE：Zonix 的虚拟内存、缺页与 swap
+# PTE 高 56 位是免费的 swap 表
 
 > 仓库：[leafvmaple/zonix-plus](https://github.com/leafvmaple/zonix-plus)
 > 系列：[Zonix OS 设计复盘 #11](https://github.com/leafvmaple/blog/issues/11) 的衍生深读
 > 涉及子系统：`mm/vmm.cpp` / `mm/swap.cpp` / `mm/swap_fifo.cpp` / `mm/pmm.cpp`
 
-虚拟内存这套机制里，最值得讲的不是"四级页表怎么走"——那是教科书内容——而是几个**数据结构复用**的小聪明：
+x86_64 的 PTE 是 64 位。Intel SDM Vol.3A §4.5（"4-Level Paging and 5-Level Paging"）/ Table 4-19 把这 64 位钉死：bit 0 present，bit 1 R/W，bit 2 U/S，bit 12-51 物理页地址（4K 页），bit 52-62 OS 软件可用，bit 63 NX。CPU 的硬件页表遍历器只在 `present=1` 时才认这一项；`present=0` 时直接抛 page fault，**剩下的 63 位它根本不看**。
 
-1. 缺页处理器只用 **PTE 的一个 present 位**，就区分了"这页从没分配过"和"这页被换出去了"两种完全不同的情况；
-2. 一个被换出的页，它的位置（swap 槽号）**直接编码进原来的 PTE**，于是 swap 子系统不需要任何额外的反查表；
-3. 选中要换出的 victim 页时，我们手里只有它的**物理地址**，但要改的是 PTE（按虚拟地址索引）——于是需要**反向扫一遍页表**，从 PA 倒推 VA。
+`kernel/mm/swap.cpp` + `swap_fifo.cpp` 共 273 行实现了 demand paging + FIFO swap，靠的全是用 PTE 这 63 个软件可用位做三件事：
 
-这三件事串起来，就是 demand paging + swap 的全部核心。
+1. 缺页处理器用 PTE 本身区分"这页从没分配过"与"这页被换出去了"两态，不要任何额外位图；
+2. swap 子系统不维护 `<va, swap_slot>` 反查表，把磁盘槽号**直接编码进原 PTE**；
+3. 选中要换出的 victim 时只有物理地址，反向扫页表回到虚拟地址（无 rmap）。
 
 ---
 
-## 1. PTE 不只是"地址 + 权限"，它是一个带 tag 的 64 位字
+## 1. PTE 当 tagged union 用：三态 + 缺页分支
 
-x86_64 的页表项（PTE）低位是一堆标志位，最低位 `present`（在 Zonix 里叫 `VM_PRESENT`）决定这一项是否指向一个真实的物理页。CPU 的硬件页表遍历器只在 `present=1` 时才认这一项；`present=0` 时，CPU 直接抛 page fault，**剩下的 63 位它根本不看**。
-
-这 63 位就是软件可以自由支配的空间。Zonix 用它把 PTE 变成了一个三态的 tagged union：
+Zonix 用 `present=0` 时那 63 位的自由度，把 PTE 变成一个三态的 tagged union（`arch/x86/include/asm/page.h` 里 `VM_PRESENT = PTE_P = 0x001`，就是 SDM 那个 bit 0）：
 
 | PTE 的值 | 含义 | 缺页时怎么办 |
 |---|---|---|
@@ -45,7 +43,7 @@ int pg_fault(MemoryDesc* mm, uint32_t error_code, uintptr_t addr) {
 }
 ```
 
-这段代码漂亮在于：**它不需要任何额外的元数据来判断"这页该分配还是该换回"**。判据完全藏在 PTE 自己的值里。CPU 触发缺页时把出错地址放进 CR2（`arch_fault_addr()` 读它），处理器拿地址走到 PTE，看一眼是不是 0 就知道分支。没有额外的位图、没有"已换出页"链表查询。
+这段代码不需要任何额外元数据来判断"这页该分配还是该换回" —— 判据完全藏在 PTE 自己的值里。CPU 触发缺页时把出错地址放进 CR2（SDM Vol.3A §4.7，`arch_fault_addr()` 读它），处理器拿地址走到 PTE，看一眼是不是 0 就知道分支。没有额外位图、没有"已换出页"链表查询。
 
 ---
 
@@ -146,7 +144,7 @@ uintptr_t scan_pt_for_pa(const pde_t* table, int depth, uintptr_t va_base, uintp
 
 这是一个深度优先的页表遍历，每层用 `LEVEL_SHIFTS[depth]` 还原出该层 entry 索引对应的虚拟地址比特段，一路 `va_base | (i << shift)` 拼出完整 VA。遇到大页（block entry，2MB 或 1GB）还要算 target_pa 在块内的偏移补回 VA 低位。
 
-> 这个 O(页表规模) 的反向扫描显然不是生产级 OS 的做法——Linux 用 `struct page` 上的反向映射（rmap）+ anon_vma 来做 PA→VA，正是为了避免每次换出都全表扫描。但在 Zonix 的教学规模下，**先用最直白、最不会写错的实现把语义跑通，再谈优化**，是更划算的顺序。这一条反向扫描函数 30 行、零额外状态、读起来一目了然；等真有性能压力了再上 rmap 不迟。我把这种取舍写进注释里，提醒未来的自己"这里是已知的、可接受的慢"。
+这是 O(页表规模) 的反向扫描，不是生产级 OS 的做法 —— Linux 用 `struct page` 上的反向映射（rmap）+ `anon_vma`（见 [`include/linux/rmap.h`](https://github.com/torvalds/linux/blob/master/include/linux/rmap.h)）做 PA→VA，正是为了避免每次换出都全表扫描。Zonix 的教学规模下，这条反向扫描函数 30 行、零额外状态、读起来一目了然；等真有性能压力再上 rmap 不迟。源码注释里明确标记了"这里是已知的、可接受的慢"。
 
 ---
 
@@ -207,10 +205,10 @@ uintptr_t mmio_map(uintptr_t phys_addr, size_t size, uint32_t perm) {
 
 <!-- 后续内存管理 / swap 的演进追加在这里，按时间倒序。每条带 commit 链接 + 一两句说明。 -->
 
-- 2026-04-07：[`c16cf25`](https://github.com/leafvmaple/zonix-plus/commit/c16cf25) 抽出架构无关的 `arch_flush_tlb_range`，并在 VMM / `mmio_map` 里统一使用（见 §5）。x86 走逐页 `invlpg`，aarch64 走 `tlbi` —— VMM 不再关心。
-- 2026-02-12：[`5a00a65`](https://github.com/leafvmaple/zonix-plus/commit/5a00a65) 统一 MMIO 访问与页分配器抽象；[`2e6847f`](https://github.com/leafvmaple/zonix-plus/commit/2e6847f) 重命名 `page2pa/pa2page` 等转换 API（→ `pmm::page_to_phys` 等），并稳定页表分配流程。
-- 2026-02-12：[`27e6267`](https://github.com/leafvmaple/zonix-plus/commit/27e6267) 把 PMM 管理器从 C struct 改写为 C++ 类，first-fit 分配器 + 引用计数收进对象。
+- 2026-04-03：[`c16cf25`](https://github.com/leafvmaple/zonix-plus/commit/c16cf25) 抽出架构无关的 `arch_flush_tlb_range`，并在 VMM / `mmio_map` 里统一使用（见 §5）。x86 走逐页 `invlpg`，aarch64 走 `tlbi` —— VMM 不再关心。
+- 2026-03-20：[`5a00a65`](https://github.com/leafvmaple/zonix-plus/commit/5a00a65) 统一 MMIO 访问与页分配器抽象；[`2e6847f`](https://github.com/leafvmaple/zonix-plus/commit/2e6847f) 重命名 `page2pa/pa2page` 等转换 API（→ `pmm::page_to_phys` 等），并稳定页表分配流程。
+- 2026-01-29：[`27e6267`](https://github.com/leafvmaple/zonix-plus/commit/27e6267) 把 PMM 管理器从 C struct 改写为 C++ 类，first-fit 分配器 + 引用计数收进对象。
 
 ---
 
-*本文是 [Zonix OS 设计复盘](https://github.com/leafvmaple/blog/issues/11) 系列的衍生深读。系列其它文章见复盘主文末尾的索引。*
+*仓库：[leafvmaple/zonix-plus](https://github.com/leafvmaple/zonix-plus)。本文属于 [Zonix OS 系列](https://github.com/leafvmaple/blog/issues/11)。*

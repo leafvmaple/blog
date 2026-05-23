@@ -1,10 +1,24 @@
-# 走査中のコンテナ変更：mini-cocos に何度も現れる pending queue + ソフト削除 + dirty ソート
+# 走査中に自分を erase する：iterator 無効化のバグは週 1 回しか表に出ない
 
 > リポジトリ：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)
 > シリーズ：[mini-cocos 設計復盤 #2](https://github.com/leafvmaple/blog/issues/2) のサブ記事
 > 関連サブシステム：`Scheduler` / `EventDispatcher`、および「走査中に変更され得る」全てのシステム
 
-エンジンを書き続けるほど、このパターンは **どの具体サブシステムよりも基礎的な工学言語** だと感じるようになります。「言語／フレームワーク非依存・出現頻度高・誤りの症状が極めて隠蔽的」の 3 条件を全て満たすからです。本稿では mini-cocos の Scheduler と EventDispatcher から抽出して、いつ使うか、どう実装するか、どんなアンチパターンがあるかを整理します。
+このパターンは mini-cocos の 3 つの独立サブシステムで同じ形で現れる：
+
+```
+$ wc -l src/base/ZCScheduler.cpp src/base/ZCActionManager.cpp src/base/ZCEventDispatcher.cpp
+  232 src/base/ZCScheduler.cpp
+  167 src/base/ZCActionManager.cpp
+  394 src/base/ZCEventDispatcher.cpp
+  793 total
+$ grep -rE "_pending|_inDispatch|_dirty.*Priority" src/base/ZCScheduler.cpp \
+                                                   src/base/ZCActionManager.cpp \
+                                                   src/base/ZCEventDispatcher.* | wc -l
+30+                         # 3 サブシステムで pending + tombstone + dirty フラグの同型実装
+```
+
+特徴は「言語／フレームワーク非依存・出現頻度高・誤りの症状が極めて隠蔽的」の 3 条件を全て満たすこと。本稿は `Scheduler` / `ActionManager` / `EventDispatcher` から抽出して、いつ使うか・どう実装するか・どんなアンチパターンがあるかを整理する。
 
 ## 1. 問題の本体：イテレータ無効化と「自噬」
 
@@ -251,4 +265,4 @@ private:
 
 ---
 
-*本記事は [mini-cocos 設計復盤](https://github.com/leafvmaple/blog/issues/2) シリーズのサブ記事です。*
+*リポジトリ：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)。本記事は [mini-cocos シリーズ](https://github.com/leafvmaple/blog/issues/2) の一篇。*

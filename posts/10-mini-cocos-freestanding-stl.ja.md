@@ -1,10 +1,21 @@
-# Freestanding STL：`std::` を `mstd::` に集約し、mini-cocos を自作 OS に組み込むための地ならし
+# 50 行のエイリアスヘッダ：mini-cocos を hosted と freestanding の間で切り替える総スイッチ
 
 > リポジトリ：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)
 > シリーズ：[mini-cocos 設計復盤 #2](https://github.com/leafvmaple/blog/issues/2) のサブ記事
 > 関連サブシステム：`base/ZCStd.h` / `third_party/zstl` サブモジュール / エンジン全 STL 呼出点
 
-この記事の発端は mini-cocos 自身より長線の目標 —— **自作 OS の UI フレームワークとして組み込む** こと。OS には host の libstdc++ が無いので、エンジン内の全 `std::vector` / `std::string` / `std::unordered_map` に「自前実装と置き換え可能」な代替を備えておく必要がある。この刀をどう入れ、hosted ビルドへの日常的な影響を回避し、freestanding コンパイル時に全体を切り替えるか —— それが本稿の主題。
+mini-cocos の現在の STL 収束状況（grep 実測）：
+
+```
+$ grep -rE "\bmstd::" src/ | wc -l
+468                             # mstd:: の参照数
+$ grep -rE "\bstd::" src/2d src/base src/scripting src/ui src/math | wc -l
+48                              # platform 以外で残存する裸 std:: —— 90% は収束済み
+$ wc -l src/base/ZCStd.h
+53                              # 50 行のエイリアスヘッダ 1 枚で切り替え全体を支える
+```
+
+この縫い目は mini-cocos 自身より長線の目標から来る —— **自作 OS の UI フレームワークとして組み込む**。OS には host の libstdc++ が無いので、エンジン内の全 `std::vector` / `std::string` / `std::unordered_map` に置き換え可能な代替を備えておく必要がある。この刀をどう入れ、hosted ビルドへの日常的な影響を回避し、freestanding コンパイル時に全体を切り替えるか —— それが本稿の主題。残る 48 箇所の裸 `std::` は文字列ユーティリティ、`std::function` スロット、IO 境界に集中、これが freestanding 化の次のボトルネックだ。
 
 ## 1. 目標と非目標
 
@@ -229,4 +240,4 @@ tools/ensure_zcstd_include.ps1  ─→ 漏れ補い（clangd 親和）
 
 ---
 
-*本記事は [mini-cocos 設計復盤](https://github.com/leafvmaple/blog/issues/2) シリーズのサブ記事です。[#3 3 つのメモリモデル](https://github.com/leafvmaple/blog/issues/3) と強く関連 —— 本稿は「標準ライブラリ依存」の縫い目を切り、#3 は「オブジェクトライフタイム」の縫い目を切っている。*
+*リポジトリ：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)。本記事は [mini-cocos シリーズ](https://github.com/leafvmaple/blog/issues/2) の一篇；[#3 3 つのメモリモデル](https://github.com/leafvmaple/blog/issues/3) と強く関連 —— 本稿は「標準ライブラリ依存」の縫い目を切り、#3 は「オブジェクトライフタイム」の縫い目を切っている。*

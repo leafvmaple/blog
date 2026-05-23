@@ -1,27 +1,43 @@
-# 用 1500 行 C++ 写一个 mini cocos2d-x：mini-cocos 的设计复盘
+# 重写 cocos2d-x：哪些 2010 年的抽象活到了 Vulkan
 
 > 仓库：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)
-> 提交跨度：2026-03-25 → 2026-05-14，22 次有效提交
-> 体量：~1500 行 C++17，CMake + GLFW + Lua 5.4，OpenGL 3.3 / Vulkan 双后端
+> 提交跨度：2026-03-25 → 2026-05-22，41 次提交
+> 体量：~11,000 行 C++17，CMake + GLFW + Lua 5.4，OpenGL 3.3 / Vulkan 双后端
 
-这一篇是 mini-cocos 的**主索引帖**。每个子系统的深读拆成了独立文章（见文末"系列文章"），这里只保留串起整套项目的骨架与几条最贯穿的工程经验。
+这一篇是 mini-cocos 的**主索引帖**。每个子系统的深读拆成了独立文章（见 §2 系列文章），这里只串骨架。
+
+正文之前，先列一下项目的指标。数据截止 2026-05-22：
+
+| 指标 | 数值 | 含义 |
+|---|---|---|
+| 提交数 | **41** | 跨度 2026-03-25 → 2026-05-22 |
+| `src/` C++ 行数 | **11,237** | 全引擎主体，不含 `third_party/` |
+| OpenGL 3.3 后端 LOC | **900** | `src/platform/opengl/` |
+| Vulkan 后端 LOC | **2,311** | `src/platform/vulkan/`，是 GL 后端的 2.6×（显式资源管理 + descriptor set + pipeline state object + command buffer 录制） |
+| `RenderDevice` 接口纯虚函数数 | **6** | `src/base/ZCRenderDevice.h`：`beginFrame` / `submit` / `endFrame` / `createTexture` / `destroyTexture` / `updateTextureRegion` |
+| `mstd::` 引用数 / 残留 `std::` | **468 / 48** | 90% 已收敛到 [zstl](https://github.com/leafvmaple/zstl) 子模块；剩余 48 处集中在 string 工具、`std::function` 槽位、IO 边界 |
+
+两条要单独说一句：
+
+- **6 个纯虚函数撑起两个差 2.6× 体量的后端**。`RenderDevice` 没有暴露任何 GL / Vulkan 概念（没有 program handle 类型、没有 command buffer 概念），让 GL 后端假装拥有命令队列、让 Vulkan 后端在内部把多次 `submit` 合并成一次 `vkQueueSubmit`。这种"接口故意比两个后端都窄"的设计在 [#6](https://github.com/leafvmaple/blog/issues/6) 详述。
+- **第二个后端是 RHI 抽象的唯一裁判**。只有 GL 后端的时候，"通用"是一种自我感觉；直到 Vulkan 真的跑起来，才知道哪些 API 是真接缝、哪些是伪装成接缝的 GL 假设。这条经验和 zonix-plus 系列里"三套 ISA 跑同一份 `kernel/`"是同源（[#11](https://github.com/leafvmaple/blog/issues/11)）。
 
 ## 目录
 
-- [0. 为什么要复刻一个"老古董"](#sec-0)
-- [1. 起手：接缝必须在第一天划好 (aee61f3)](#sec-1)
+- [0. 项目范围](#sec-0)
+- [1. 起手：接缝必须在第一天划好 (`aee61f3`)](#sec-1)
 - [2. 系列文章](#sec-2)
 - [3. 一些"小"提交里的工程审美](#sec-3)
-- [4. 复盘：3 周 1500 行，到底学到了什么](#sec-4)
+- [4. Vulkan 落地之后还成立的几条事实](#sec-4)
 
 ---
 
 <a id="sec-0"></a>
-## 0. 为什么要复刻一个"老古董"
+## 0. 项目范围
 
-我在游戏行业做 Gameplay / 引擎相关的工作十年，cocos2d-x 是绕不开的一段历史。引擎本身已经"过时"，但它的几套抽象 —— `Ref` + `AutoreleasePool`、`EventDispatcher` 的双优先级链、`Action / ActionInterval` 时间轴、`Scheduler` 的统一回调表 —— 至今仍然是 2D 引擎里非常体面的工程范式。Unity 的 `Coroutine`、UE 的 `Timeline`、Unreal Slate 的事件冒泡，很多设计你能在 cocos2d-x 里找到同源。
+mini-cocos 把 cocos2d-x 当作设计参考、OpenGL / Vulkan 当作渲染后端，写一个**只保留骨架、可以加载场景、跑动作、绑 Lua、点按钮**的最小化引擎。cocos2d-x 引擎本身已经"过时"，但它的几套抽象 —— `Ref` + `AutoreleasePool`、`EventDispatcher` 的双优先级链、`Action / ActionInterval` 时间轴、`Scheduler` 的统一回调表 —— 至今仍然是 2D 引擎里非常体面的工程范式。Unity 的 `Coroutine`、UE 的 `Timeline`、Unreal Slate 的事件冒泡，很多设计能在 cocos2d-x 里找到同源。
 
-但我一直没有亲手把这些东西"长出来"过。读引擎源码和写引擎源码完全是两种理解。所以我把 cocos2d-x 当作设计参考、把 OpenGL/Vulkan 当作渲染后端，在 3 周里写了一个**只保留骨架、可以加载场景、跑动作、绑 Lua、点按钮**的最小化引擎。这套博客系列不是"如何写引擎"的教程，而是把每一步**为什么这么写、为什么不那么写**的取舍写下来，作为对自己工作方式的一次外化。
+这套博客系列不是"如何写引擎"的教程，而是把每一步**为什么这么写、为什么不那么写**的取舍写下来。
 
 ---
 
@@ -37,11 +53,9 @@ View*         createDefaultView();
 RenderDevice* createDefaultRenderDevice();
 ```
 
-从第一行代码就分离 View（窗口/输入抽象）和 RenderDevice（渲染抽象），是为了**逼自己后面写 Vulkan 的时候没有借口去改 main.cpp**。事实证明这个决定救了我一次：后来切 Vulkan 时，引擎入口完全没动，只有平台层加了一个 `createVulkanRenderDevice()` 的工厂。
+从第一行代码就分离 View（窗口/输入抽象）和 RenderDevice（渲染抽象），是为了**让后来写 Vulkan 的时候没有借口去改 `main.cpp`**。这个决定的回报在 Vulkan 后端落地时兑现：引擎入口完全没动，平台层只加了一个 `createVulkanRenderDevice()` 工厂。
 
-> 经验：抽象不一定要一上来就完整，但**接缝**必须在第一天就划好。后期"补一个抽象层"几乎一定要重写两遍。
-
-这条经验贯穿了整个系列：内存模型的多套并存、EventDispatcher 的双优先级链、RHI 的 handle-based 接口、Action 的归一化时间 t —— **它们都是一开始就划在那里的接缝**，后续每加一个功能都从中间穿过，没动过。
+这条接缝贯穿了整个系列：内存模型的多套并存、EventDispatcher 的双优先级链、RHI 的 handle-based 接口、Action 的归一化时间 `t` —— **它们都是一开始就划在那里的接缝**，后续每加一个功能都从中间穿过，没动过。
 
 ---
 
@@ -108,20 +122,23 @@ EventDispatcher 和 Scheduler 里每帧都有这种"清理已取消的 entry"的
 ---
 
 <a id="sec-4"></a>
-## 4. 复盘：3 周 1500 行，到底学到了什么
+## 4. Vulkan 落地之后还成立的几条事实
 
-如果非要总结成几条对自己之后引擎/Gameplay 工作的提醒：
+下面这几条放在这里，是因为它们**在只有 GL 单后端的初版时只是直觉，到 Vulkan 双后端的现在依然没被反例打掉**。
 
-1. **接缝在第一天划，抽象在第二个实现里完工**。一上来就抽象会过度设计；不抽象会重写两遍。
-2. **"在遍历中修改"的系统**统一走 pending queue + 软删除 + 脏排序。这是引擎里反复出现的模式（→ [#4](https://github.com/leafvmaple/blog/issues/4)）。
-3. **生命周期不是单一答案**：autorelease 适合值对象、显式 ref-counting 适合 GPU/IO 资源、`shared_ptr` 在嵌入脚本语言的场合反而碍事（→ [#3](https://github.com/leafvmaple/blog/issues/3)）。
-4. **位域 sortKey、双优先级链、归一化时间 t** 这些"小聪明"，每一个都换来了后面多一个功能的零重构（→ [#6](https://github.com/leafvmaple/blog/issues/6) / [#5](https://github.com/leafvmaple/blog/issues/5) / [#7](https://github.com/leafvmaple/blog/issues/7)）。
-5. **API 设计的最高目标是让用户写不出错的代码**。Action 体系是最好的例子。
-6. **没有第二个实现，抽象就是占位符**。OpenGL → Vulkan 这一刀，是整个项目最大的收获之一（→ [#6](https://github.com/leafvmaple/blog/issues/6)）。
+1. **OpenGL 后端 900 行 vs Vulkan 后端 2,311 行，背后是 6 个相同的纯虚函数**。`RenderDevice` 没有暴露任何后端概念（program handle、command buffer、descriptor set），让 GL 后端假装拥有命令队列、让 Vulkan 后端在内部把多次 `submit` 合并成一次 `vkQueueSubmit`。这种"接口故意比两个后端都窄"在 GL 时代看是过度抽象，到 Vulkan 落地时才回报（详见 [#6](https://github.com/leafvmaple/blog/issues/6)）。
 
-复刻一个老引擎，从工程结果上看没有任何"产出"—— 不会有用户、也不会有 PR。但从工程能力上看，它逼你把一连串**别人替你做过的取舍**自己再做一遍，并且**自己承担每一个错误决定的后果**。这种经历是读多少源码都换不来的。
+2. **第二个后端是 RHI 抽象的唯一裁判**。只有 GL 时，"通用"是一种自我感觉；Vulkan 真的跑起来才知道哪些 API 是真接缝。这条经验和 zonix-plus 系列里"三套 ISA 跑同一份 `kernel/`"是同源（[#11](https://github.com/leafvmaple/blog/issues/11)）。
 
-接下来准备给 mini-cocos 加的功能是：粒子系统、Spine 骨骼动画、以及一个真正能用 Lua 写完整 demo 的样例工程。等做完再写下一篇。
+3. **`mstd::` 引用 468 处、残留 `std::` 48 处**。90% 已收敛到 [zstl](https://github.com/leafvmaple/zstl) 子模块；剩余 48 处集中在 string 工具、`std::function` 槽位、IO 边界。把整个引擎 freestanding 化的瓶颈现在就是这 48 处（详见 [#10](https://github.com/leafvmaple/blog/issues/10)）。
+
+4. **Action 系统 1,082 行支持 `Sequence` / `Spawn` / `Ease` / `Repeat` 任意嵌套**。所有组合性的根本前提是 `update(t∈[0,1])` 这一个契约 —— `Ease(action, easeFn)` 等价于 `update(easeFn(t))`，一个高阶函数（详见 [#7](https://github.com/leafvmaple/blog/issues/7)）。
+
+5. **Lua 绑定 1,529 行手写 metatable**。和 sol2"三行能搞定"是反方向；这 1,529 行换回的是编译速度、错误信息可读、以及 Lua/C++ 边界 `_alive` 标志位带来的"对象在 Lua 这边持有时可能已被 C++ delete 掉"的安全（详见 [#9](https://github.com/leafvmaple/blog/issues/9)）。
+
+6. **渲染主路径上一次 `std::sort` 同时做三件事**：透明分段、state 合并、z 排序。靠的是 64-bit sortKey 的 bit 编码，不需要分别的 render pass / pipeline 缓存（详见 [#6](https://github.com/leafvmaple/blog/issues/6)）。
+
+下一步：粒子系统、Spine 骨骼动画、以及一个真正能用 Lua 写完整 demo 的样例工程。
 
 ---
 
@@ -135,4 +152,4 @@ EventDispatcher 和 Scheduler 里每帧都有这种"清理已取消的 entry"的
 
 ---
 
-*本文记录的是 [leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos) 的设计思考。如果你也在写自己的引擎，或者有更优雅的实现思路，欢迎到仓库的 Issue 区聊聊。*
+*仓库：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)。*

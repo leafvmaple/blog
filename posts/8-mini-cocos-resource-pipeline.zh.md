@@ -1,10 +1,20 @@
-# 资源管线：FontAtlas 字形缓存与 FileUtils 搜索路径
+# CJK Label 卡死加载界面的不是字符多，是每个字一张纹理
 
 > 仓库：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)
 > 系列：[mini-cocos 设计复盘 #2](https://github.com/leafvmaple/blog/issues/2) 的衍生深读
 > 涉及子系统：`FontAtlas` / `Label` / `FileUtils` / `stb_truetype`
 
-这一篇把两件看起来不相关、但都属于"资源管线"的东西合在一起：**字体绘制怎么不暴毙**（FontAtlas 增量光栅化），以及**怎么在多语言 + 多分辨率 + 玩家 mod 的情况下管理"加载一个文件"这件事**（FileUtils 搜索路径）。两者都属于"做对了透明、做错了到处崩"的基础设施。
+mini-cocos 的资源管线在两个看起来不相关、但症状相似的地方暴露出来 —— "做对了透明、做错了到处崩"：
+
+```
+$ wc -l src/base/ZCFontAtlas.cpp src/platform/ZCFileUtils.cpp src/platform/win32/ZCFileUtilsWin32.cpp
+   378 src/base/ZCFontAtlas.cpp                  # FontAtlas + stb_truetype 接入
+   290 src/platform/ZCFileUtils.cpp              # 跨平台 FileUtils
+   297 src/platform/win32/ZCFileUtilsWin32.cpp   # win32 实现
+   965 total
+```
+
+两件事是：**字体绘制怎么不暴毙**（FontAtlas 字形按需 / 增量光栅化，靠 `stb_truetype` 的 `stbtt_GetCodepointBitmap` 单字符光栅 + 共享 atlas），以及**怎么在多语言 + 多分辨率 + 玩家 mod 的情况下管理"加载一个文件"**（FileUtils 搜索路径列表，多个 root 顺序回退）。
 
 ## 1. 为什么 Label 是性能陷阱
 
@@ -254,4 +264,4 @@ Windows 不分大小写、Linux/Android 分。开发期 Windows 上 `load("UI/Bu
 
 ---
 
-*本文是 [mini-cocos 设计复盘](https://github.com/leafvmaple/blog/issues/2) 系列的衍生深读。*
+*仓库：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)。本文属于 [mini-cocos 系列](https://github.com/leafvmaple/blog/issues/2)。*

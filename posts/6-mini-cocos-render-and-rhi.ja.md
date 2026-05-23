@@ -1,10 +1,23 @@
-# レンダーキュー sortKey と OpenGL / Vulkan の RHI 抽象
+# 64 ビット整数 1 個でフレーム全 draw call をソートする
 
 > リポジトリ：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)
 > シリーズ：[mini-cocos 設計復盤 #2](https://github.com/leafvmaple/blog/issues/2) のサブ記事
 > 関連サブシステム：`Renderer` / `RenderQueue` / `RHI` / `OpenGL` / `Vulkan` バックエンド
 
-本稿ではレンダリング部の、互いに独立だが必ず一緒に語る必要のある 2 件を合わせて：**sortKey エンコーディング**（「どんな順で描くか」を 1 つの 64-bit 整数に詰めて、ソートとマージ判定を同じ key で行う）と **RHI 抽象**（OpenGL / Vulkan という全く異なる API モデル両者を、同じエンジンコードで支える）。前者はデータ、後者はインターフェイス；両者で「メインスレッドがコマンド構築、レンダースレッドがコマンド消費」のパイプラインの形が決まる。
+mini-cocos のレンダリング層は 2 件で「メインスレッドがコマンド構築、レンダースレッドがコマンド消費」のパイプラインを支える：
+
+```
+$ wc -l src/platform/opengl/*.cpp src/platform/opengl/*.h
+   ...
+   900 total                  # OpenGL 3.3 バックエンド
+$ wc -l src/platform/vulkan/*.cpp src/platform/vulkan/*.h
+   ...
+  2311 total                  # Vulkan バックエンド、GL の 2.6×
+$ grep -cE "= 0;\s*$" src/base/ZCRenderDevice.h
+6                              # RenderDevice インターフェイスの純粋仮想関数数：6 個で 2.6× の規模差を支える
+```
+
+2 件とは **sortKey エンコーディング**（1 つの 64-bit 整数が透明分段 / state マージ / z ソートのソートキーを同時に担う）と **RHI 抽象**（6 個の純粋仮想関数が OpenGL の暗黙状態機械 vs. Vulkan の明示的コマンドバッファという全く異なる API モデルを同じ呼び出し集合に収束させる）。前者はデータ、後者はインターフェイス。
 
 ## 1. なぜ単純な Z 順では描けないか
 
@@ -238,4 +251,4 @@ fence シグナル → pending deletion 処理
 
 ---
 
-*本記事は [mini-cocos 設計復盤](https://github.com/leafvmaple/blog/issues/2) シリーズのサブ記事です。*
+*リポジトリ：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)。本記事は [mini-cocos シリーズ](https://github.com/leafvmaple/blog/issues/2) の一篇。*

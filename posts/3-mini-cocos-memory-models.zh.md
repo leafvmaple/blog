@@ -1,12 +1,23 @@
-# mini-cocos 的三套内存模型：`Ref`、autorelease 与 `shared_ptr` 各自的边界
+# `shared_ptr` 没有的语义：autorelease 的"这一帧死"
 
 > 仓库：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)
 > 系列：[mini-cocos 设计复盘 #2](https://github.com/leafvmaple/blog/issues/2) 的衍生深读
 > 涉及子系统：`Ref` / `AutoreleasePool` / `TextureCache` / `Animation`
 
-写这一篇的起因，是我在 mini-cocos 里同时**并存了三种内存管理风格**：cocos2d-x 风的 `Ref` + autorelease、TextureCache 里的手写 refcount、以及个别 STL/Lua 边界上零散出现的 `std::shared_ptr`。这套混搭在 code review 里经常被问"为什么不统一一种"。答案是：**它们在不同对象上有不同的最佳解**，强行统一一定会牺牲掉其中一类对象的语义。
+mini-cocos 当前的内存模型分布（grep 实测）：
 
-下面把每一种模型在 mini-cocos 里的具体职责写清楚，并把"什么时候不该用引用计数"这一条单独拿出来讨论 —— 这是整套体系里最容易被忽视、但一旦做错就最难发现的地方。
+```
+$ grep -rE "\bautorelease\(\)|->retain\(\)|->release\(\)" src/ | wc -l
+56                          # Ref + autorelease (cocos 风) 的调用点
+$ grep -rE "\bunique_ptr<|mstd::make_unique" src/ | wc -l
+21                          # std::unique_ptr 单一所有权
+$ grep -rE "\bshared_ptr<|make_shared" src/ | wc -l
+0                           # shared_ptr —— 一处也没有，且是有意为之
+```
+
+三个数字对应三种不同的对象生命周期策略：**`Ref` + autorelease 处理「值对象 + 场景图节点 + Lua 暴露对象」、手写 refcount 处理「GPU/IO 资源」、`unique_ptr` 处理「单一所有者的内部组件」**。`shared_ptr` 的 0 不是偶然，是设计立场 —— 下面 §2 详述。
+
+这一篇把每种模型在 mini-cocos 里的具体职责写清楚，重点放在"什么时候**不该**用引用计数"和"为什么坚决不用 `shared_ptr`"这两条上 —— 是整套体系里最容易被忽视、做错最难发现的地方。
 
 ## 1. `Ref` + AutoreleasePool 在做什么
 
@@ -120,13 +131,7 @@ sprite->runAction(Animate::create(anim));                 // Animate 内部 reta
 
 这是 `Ref` 体系最舒服的用法：临时构造、交给目标对象消费、自己不持有 —— 调用方代码里几乎看不到生命周期相关的字符。
 
-> 这条经验我特意挑出来：**ref-counting 不是宗教，是工具**。
->
-> - **资源**（GPU 显存、文件句柄、socket）→ 必须显式、即时释放，走手写 refcount。
-> - **值对象**（动画元数据、配置、消息）→ 适合 autorelease pool。
-> - **跨 C++/脚本边界的对象** → 走 `Ref`，让 C++ 一侧保持所有权主导。
->
-> 一套引擎里两套甚至三套内存模型并存是常态，不是设计缺陷。**用一种模型解决所有问题是设计缺陷**。
+ref-counting 不是宗教，是工具：**资源**（GPU 显存、文件句柄、socket）必须显式、即时释放，走手写 refcount；**值对象**（动画元数据、配置、消息）适合 autorelease pool；**跨 C++/脚本边界的对象**走 `Ref`，让 C++ 一侧保持所有权主导。一套引擎里两套甚至三套内存模型并存是常态，不是设计缺陷 —— **用一种模型解决所有问题才是设计缺陷**。
 
 ## 5. 决策矩阵
 
@@ -151,4 +156,4 @@ mini-cocos 里我用下面这张表做内存模型的决策。新增类型时按
 
 ---
 
-*本文是 [mini-cocos 设计复盘](https://github.com/leafvmaple/blog/issues/2) 系列的衍生深读。系列其它文章见复盘主文末尾的索引。*
+*仓库：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)。本文属于 [mini-cocos 系列](https://github.com/leafvmaple/blog/issues/2)。*

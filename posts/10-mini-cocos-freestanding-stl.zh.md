@@ -1,10 +1,21 @@
-# Freestanding STL：把 `std::` 收敛到 `mstd::`，为把 mini-cocos 嵌进自制 OS 做准备
+# 50 行别名头：mini-cocos 在 hosted 与 freestanding 之间切换的总开关
 
 > 仓库：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)
 > 系列：[mini-cocos 设计复盘 #2](https://github.com/leafvmaple/blog/issues/2) 的子篇
 > 相关子系统：`base/ZCStd.h` / `third_party/zstl` 子模块 / 全引擎 STL 调用点
 
-这一篇起因于一个比 mini-cocos 本身更长线的目标：**把它作为自制 OS 的 UI 框架嵌进去**。OS 没有 host libstdc++，引擎里所有 `std::vector` / `std::string` / `std::unordered_map` 都得有"我自己提供的版本"可以替换。这一刀如何切下去、不影响日常 hosted 构建、又能在 freestanding 编译时整体切换 —— 就是本篇的内容。
+mini-cocos 当前 STL 收敛状态（grep 实测）：
+
+```
+$ grep -rE "\bmstd::" src/ | wc -l
+468                             # mstd:: 引用点
+$ grep -rE "\bstd::" src/2d src/base src/scripting src/ui src/math | wc -l
+48                              # 非 platform 代码里残留的裸 std:: —— 90% 已收敛
+$ wc -l src/base/ZCStd.h
+53                              # 50 行别名头撑起整套切换
+```
+
+这条接缝来自一个比 mini-cocos 本身更长线的目标：**把它作为自制 OS 的 UI 框架嵌进去**。OS 没有 host libstdc++，引擎里所有 `std::vector` / `std::string` / `std::unordered_map` 都得有可以替换的版本。这一刀如何切下去、不影响日常 hosted 构建、又能在 freestanding 编译时整体切换 —— 就是本篇的内容。剩下 48 处裸 `std::` 集中在 string 工具、`std::function` 槽位、IO 边界，是 freestanding 化的下一步瓶颈。
 
 ## 1. 目标与非目标
 
@@ -229,4 +240,4 @@ tools/ensure_zcstd_include.ps1  ─→ 补漏脚本（clangd 友好）
 
 ---
 
-*本文是 [mini-cocos 设计复盘](https://github.com/leafvmaple/blog/issues/2) 系列的子篇。与 [#3 三套内存模型](https://github.com/leafvmaple/blog/issues/3) 强相关——本篇切的是"标准库依赖"这一条接缝，#3 切的是"对象生命周期"那一条。*
+*仓库：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)。本文属于 [mini-cocos 系列](https://github.com/leafvmaple/blog/issues/2)；与 [#3 三套内存模型](https://github.com/leafvmaple/blog/issues/3) 强相关 —— 本篇切的是"标准库依赖"那一条接缝，#3 切的是"对象生命周期"那一条。*

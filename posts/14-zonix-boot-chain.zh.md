@@ -1,14 +1,19 @@
-# 从上电到 `kern_init`：Zonix 的引导链与 boot_info 统一协议
+# BIOS 与 UEFI 在 `head.S` 汇合：`rdi=&BootInfo`
 
 > 仓库：[leafvmaple/zonix-plus](https://github.com/leafvmaple/zonix-plus)
 > 系列：[Zonix OS 设计复盘 #11](https://github.com/leafvmaple/blog/issues/11) 的衍生深读
 > 涉及子系统：`arch/x86/boot/{bios,uefi}/` / `arch/x86/kernel/head.S` / `include/kernel/bootinfo.h`
 
-引导是内核里**唯一一段"脚下的地基边走边塌"的代码**：你要切换 CPU 模式、重建页表、换栈，而每一步都可能让下一条指令所在的地址失效。这一篇讲三件事：
+x86 上 zonix-plus 同时支持 BIOS 和 UEFI 两种固件，最终产物从不同入口出发但都跳进同一个 `head.S`：
 
-1. BIOS 和 UEFI 两条完全不同的引导路径，如何收敛到内核的**同一个入口、同一个 `BootInfo`**；
-2. `head.S` 里那段"在物理地址上运行、却引用虚拟地址符号"的代码，靠一个 `REALLOC` 宏怎么活下来；
-3. 整个引导期最反直觉的一步——**换 CR3 的同时必须先换栈**，以及为什么这一步在 UEFI 路径上是生死攸关的。
+```
+bin/x86/mbr         3,744 字节   .text 段 512 字节 (16-bit real mode)
+bin/x86/vbr         6,408 字节   .text 段 512 字节 (16-bit real mode, 懂 FAT32)
+bin/x86/bootloader  19,100 字节  (32-bit protected mode, ELF loader)
+arch/x86/kernel/head.S  255 行   x86 BIOS / UEFI / 高半区切换的汇合点
+```
+
+引导期是内核里**脚下的地基边走边塌**的一段代码：要切换 CPU 模式（real → protected → long）、重建页表（恒等映射 → 高半区映射）、换栈，每一步都可能让下一条指令所在的地址失效。这一篇看四件事 —— BIOS / UEFI 双路径如何汇合到 `head.S` 的 `rdi=&BootInfo`，`REALLOC` 宏如何让物理地址跑的代码引用虚拟链接符号，换 CR3 同时如何换栈（UEFI 路径致命点），boot_info 如何躲过 BSS 清零。
 
 ---
 
@@ -127,7 +132,7 @@ movq %rax, %cr3
 
 这就是引导期最反直觉的一步：**换页表不只影响代码地址，也影响栈地址。** UEFI 固件交给我们时，RSP 可能指向固件分配的某个高地址栈。我们的新页表里那个高地址没映射——所以一旦 `mov %rax, %cr3` 执行完，下一次 `push`/`call`/`ret` 碰栈，就缺页死机。修复是在换 CR3 **之前**把 RSP 挪到 `0x7000`（一个一定被恒等映射覆盖的低地址）。BIOS 路径因为 bootloader 早就把栈设在低地址，碰巧躲过了这颗雷，所以这个 bug 只在 UEFI 路径暴露——又一个"换个引导路径就是一种 fuzzing"的例子（参见 [#12](https://github.com/leafvmaple/blog/issues/12) 里换编译器暴露 `switch_to` bug 的同构故事）。
 
-> 经验：凡是改变"地址 → 内容"映射的操作（换 CR3、换 TTBR、改 GDT、relocate），都要问一句**"我此刻正踩着的每一块地（代码、栈、即将访问的数据）在新映射下还在不在？"** 引导期的绝大多数 triple fault 都是某块"脚下的地"在切换瞬间塌了。把这条当 checklist，能省下大量对着 QEMU 反复重启发呆的时间。
+凡是改变"地址 → 内容"映射的操作（换 CR3、换 TTBR、改 GDT、relocate），都要问一句：**此刻正踩着的每一块地（代码、栈、即将访问的数据）在新映射下还在不在**。引导期的绝大多数 triple fault 都是某块"脚下的地"在切换瞬间塌了。
 
 跳进高半区、抹掉恒等映射之后，剩下的就平淡了：清 BSS（bootloader 只加载段、不负责清零未初始化数据）、设好真正的内核栈、`lidt` 装中断表、把保存好的 `BootInfo` 物理地址放进 `rdi`、`call kern_init`。控制权终于交给了 C++。
 
@@ -152,10 +157,13 @@ __kernel_boot_info:
 
 <!-- 后续引导链的演进追加在这里，按时间倒序。每条带 commit 链接 + 一两句说明。 -->
 
-- 2026-04-07：[`4d92e4f`](https://github.com/leafvmaple/zonix-plus/commit/4d92e4f) 整合 UEFI 引导流程并加入 riscv64 CI；[`45637c7`](https://github.com/leafvmaple/zonix-plus/commit/45637c7) 收敛 UEFI 引导辅助代码、移除 Bochs 支持，引导路径进一步统一。
-- 2026-03-12：[`921ea7b`](https://github.com/leafvmaple/zonix-plus/commit/921ea7b) / [`f006423`](https://github.com/leafvmaple/zonix-plus/commit/f006423) 把 UEFI 与 BIOS 的 bootloader 从 C 迁到 C++，统一编码约定；[`1437166`](https://github.com/leafvmaple/zonix-plus/commit/1437166) UEFI 工具链从 MinGW GCC 换成 `clang --target=x86_64-pc-windows-msvc` + `lld-link`（详见 [#17](https://github.com/leafvmaple/blog/issues/17)）。
-- 2026-02-12：[`6ff8a32`](https://github.com/leafvmaple/zonix-plus/commit/6ff8a32) 把 BIOS / UEFI 统一进同一个 64 位 `head.S` 入口并引入 kernel config 系统；[`501c4b8`](https://github.com/leafvmaple/zonix-plus/commit/501c4b8) 把 32→64 long mode 切换抽到 `entry.S` 并共享 bootlib（见 §1）。
+- 2026-04-02：[`4d92e4f`](https://github.com/leafvmaple/zonix-plus/commit/4d92e4f) 整合 UEFI 引导流程并加入 riscv64 CI。
+- 2026-03-30：[`45637c7`](https://github.com/leafvmaple/zonix-plus/commit/45637c7) 收敛 UEFI 引导辅助代码、移除 Bochs 支持，引导路径进一步统一；[`f006423`](https://github.com/leafvmaple/zonix-plus/commit/f006423) BIOS bootloader 从 C 迁到 C++。
+- 2026-03-27：[`921ea7b`](https://github.com/leafvmaple/zonix-plus/commit/921ea7b) UEFI 入口从 C 迁到 C++，统一编码约定。
+- 2026-03-24：[`1437166`](https://github.com/leafvmaple/zonix-plus/commit/1437166) UEFI 工具链从 MinGW GCC 换成 `clang --target=x86_64-pc-windows-msvc` + `lld-link`（详见 [#17](https://github.com/leafvmaple/blog/issues/17)）。
+- 2026-02-12：[`501c4b8`](https://github.com/leafvmaple/zonix-plus/commit/501c4b8) 把 32→64 long mode 切换抽到 `entry.S` 并共享 bootlib（见 §1）。
+- 2026-02-10：[`6ff8a32`](https://github.com/leafvmaple/zonix-plus/commit/6ff8a32) 把 BIOS / UEFI 统一进同一个 64 位 `head.S` 入口并引入 kernel config 系统。
 
 ---
 
-*本文是 [Zonix OS 设计复盘](https://github.com/leafvmaple/blog/issues/11) 系列的衍生深读。系列其它文章见复盘主文末尾的索引。*
+*仓库：[leafvmaple/zonix-plus](https://github.com/leafvmaple/zonix-plus)。本文属于 [Zonix OS 系列](https://github.com/leafvmaple/blog/issues/11)。*

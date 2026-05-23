@@ -1,4 +1,4 @@
-# 単一コアのカーネルでもなぜ spinlock が要るか：Zonix の同期プリミティブのスタック
+# spinlock が単一コアで排他するのは別 CPU ではなく割り込みハンドラ
 
 > リポジトリ：[leafvmaple/zonix-plus](https://github.com/leafvmaple/zonix-plus)
 > シリーズ：[Zonix OS 設計振り返り #11](https://github.com/leafvmaple/blog/issues/11) の詳細記事
@@ -205,9 +205,9 @@ Semaphore / Mutex ─► count / owner + Spinlock + WaitQueue
 
 <!-- 同期プリミティブの今後の進化はここに、時系列降順で。各項に commit リンク + 一言。 -->
 
-- 2026-02-12：[`17869d7`](https://github.com/leafvmaple/zonix-plus/commit/17869d7) 一揃いの同期プリミティブ（Spinlock / WaitQueue / Semaphore / Mutex / `LockGuard<T>`）+ プリエンプティブ優先度スケジューリングを一度に導入。本記事の階層構造はここで成立。
-- **TODO**：WaitQueue に `prepare_to_wait` 風の接口を補い、§4 で述べた `Semaphore::down()` の lost-wakeup 窓を閉じる —— 「条件チェック + 入队」を同一原子区間に収める。これは同期層の既知の、次に引くべき継ぎ目。
+- 2026-03-13：[`17869d7`](https://github.com/leafvmaple/zonix-plus/commit/17869d7) 一揃いの同期プリミティブ（Spinlock / WaitQueue / Semaphore / Mutex / `LockGuard<T>`）+ プリエンプティブ優先度スケジューリングを一度に導入。本記事の階層構造はここで成立。ソース総量 166 行：`spinlock.h`/`.cpp` 各 19 行、`waitqueue.h`/`.cpp` 20+52 行、`semaphore.h`/`.cpp` 24+32 行。
+- **TODO**：WaitQueue に `prepare_to_wait` 風のインターフェースを補い、§4 で述べた `Semaphore::down()` の lost-wakeup 窓を閉じる —— 「条件チェック + キュー挿入」を同一原子区間に収める。これは同期層の既知の、次に引くべき継ぎ目。
 
 ---
 
-*本記事は [Zonix OS 設計振り返り](https://github.com/leafvmaple/blog/issues/11) シリーズの詳細記事です。他の記事は振り返り本編末尾のインデックスから。*
+*リポジトリ：[leafvmaple/zonix-plus](https://github.com/leafvmaple/zonix-plus)。本記事は [Zonix OS シリーズ](https://github.com/leafvmaple/blog/issues/11) の一篇。*

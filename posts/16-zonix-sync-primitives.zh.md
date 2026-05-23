@@ -1,4 +1,4 @@
-# 单核内核为什么也要 spinlock：Zonix 的同步原语栈
+# spinlock 在单核上互斥的不是 CPU，是中断处理程序
 
 > 仓库：[leafvmaple/zonix-plus](https://github.com/leafvmaple/zonix-plus)
 > 系列：[Zonix OS 设计复盘 #11](https://github.com/leafvmaple/blog/issues/11) 的衍生深读
@@ -205,9 +205,9 @@ Semaphore / Mutex ─► count / owner + Spinlock + WaitQueue
 
 <!-- 后续同步原语的演进追加在这里，按时间倒序。每条带 commit 链接 + 一两句说明。 -->
 
-- 2026-02-12：[`17869d7`](https://github.com/leafvmaple/zonix-plus/commit/17869d7) 一次性引入整套同步原语（Spinlock / WaitQueue / Semaphore / Mutex / `LockGuard<T>`）+ 抢占式优先级调度。本文描述的分层结构自此成型。
+- 2026-03-13：[`17869d7`](https://github.com/leafvmaple/zonix-plus/commit/17869d7) 一次性引入整套同步原语（Spinlock / WaitQueue / Semaphore / Mutex / `LockGuard<T>`）+ 抢占式优先级调度。本文描述的分层结构自此成型。源码总量 166 行：`spinlock.h`/`.cpp` 各 19 行、`waitqueue.h`/`.cpp` 20+52 行、`semaphore.h`/`.cpp` 24+32 行。
 - **待办**：给 WaitQueue 补一个 `prepare_to_wait` 风格的接口，关掉 §4 描述的 `Semaphore::down()` lost-wakeup 窗口——把"条件检查 + 入队"收进同一个原子区间。这是同步层已知的、下一步要划的接缝。
 
 ---
 
-*本文是 [Zonix OS 设计复盘](https://github.com/leafvmaple/blog/issues/11) 系列的衍生深读。系列其它文章见复盘主文末尾的索引。*
+*仓库：[leafvmaple/zonix-plus](https://github.com/leafvmaple/zonix-plus)。本文属于 [Zonix OS 系列](https://github.com/leafvmaple/blog/issues/11)。*

@@ -1,22 +1,29 @@
-# 一个被 GCC 掩盖、被 Clang 暴露的 `switch_to` bug：Zonix 的上下文切换与抢占式调度
+# `leave;ret` 掩盖了六周的 RSP off-by-8，换 Clang 当场 triple fault
 
 > 仓库：[leafvmaple/zonix-plus](https://github.com/leafvmaple/zonix-plus)
 > 系列：[Zonix OS 设计复盘 #11](https://github.com/leafvmaple/blog/issues/11) 的衍生深读
 > 涉及子系统：`switch.S` / `sched/` / `TaskStruct` / `Context` / `TrapFrame`
 
-上下文切换是内核里最"魔法"的一段代码：一个函数调进去，**回来时已经是另一个进程在执行**。这一篇拆三件事：
+2026-03-12 把 zonix-plus 的工具链从 GCC/GNU ld 整体迁到 Clang/LLD/LLVM（[`9fae90c`](https://github.com/leafvmaple/zonix-plus/commit/9fae90c)），第一次 `make qemu` 直接 triple fault，控制台一行 panic 都没来得及打。`git bisect` 缩到这个 commit；diff 里和 800 行 Makefile / `cxxrt.cpp` 改动并排塞着一个汇编改动，差 8 字节：
 
-1. `switch_to` 这 20 行汇编到底在搬运什么；
-2. 一个**潜伏了几个月、换编译器才暴露**的 RSP off-by-8 bug —— 它是整个项目我最喜欢的一个 bug；
-3. fork 出来的新进程从没运行过，它的"第一次返回"是怎么伪造出来的（forkret/trapret），以及优先级 round-robin 调度器的环形游标。
+```diff
+@@ arch/x86/kernel/switch.S
+-    movq %rsp, 8(%rdi)          # context->rsp
++    leaq 8(%rsp), %rax          # compute caller's RSP (before callq pushed ret addr)
++    movq %rax, 8(%rdi)          # context->rsp = caller's RSP
+```
+
+这条 bug 从 2026-01-28（[`62fda85`](https://github.com/leafvmaple/zonix-plus/commit/62fda85)，项目第一个 commit）就在 `switch.S` 里，在 GCC 下安静地跑了 6 周，因为 GCC 给 `switch_to` 的**调用者** `TaskStruct::run` 生成的 epilogue 恰好绕过了它；Clang 的 epilogue 形状不同，第一拍就崩。
+
+这一篇是这场 bug 的解剖：§1 看 `switch_to` 这 20 行汇编在搬运什么，§2 把两个编译器 epilogue 拉到桌面上对比，§3-5 是这段栈魔法顺手催生的 fork/trapret、调度器游标、`current` 时机几件相关事。
 
 ---
 
 ## 1. `switch_to` 搬运的是"两个寄存器集之间的差"
 
-进程切换的本质，是把 CPU 当前进程的**callee-saved 寄存器 + 栈指针 + 返回地址**存起来，再把目标进程之前存的那一套装回去。x86_64 System V ABI 下，callee-saved 是 `rbx / rbp / r12-r15` + `rsp`，加上"接着从哪执行"的 `rip`。caller-saved 寄存器不用存 —— 因为 `switch_to` 是个普通 C 函数调用，调用方早已假定它们会被破坏。
+进程切换的本质：把 CPU 当前进程的 callee-saved 寄存器 + RSP + RIP 存起来，再把目标进程的同一套装回去。x86_64 System V ABI v1.0 §3.2.1（"Registers and the Stack Frame"）规定 callee-saved 寄存器为 `rbx / rbp / r12 / r13 / r14 / r15`，加上 `rsp`、控制 / 状态字段；caller-saved 寄存器（`rax / rcx / rdx / rsi / rdi / r8-r11`）不用存 —— 因为 `switch_to` 是普通 C 函数调用，调用方已假定它们被破坏。
 
-Zonix 的 `Context` 就是这 8 个槽：
+Zonix 的 `Context` 就是这 8 个槽（`rip` / `rsp` / `rbx` / `rbp` / `r12` / `r13` / `r14` / `r15`，各 8 字节，共 64 字节）：
 
 ```cpp
 // Context layout: rip, rsp, rbx, rbp, r12, r13, r14, r15  (各 8 字节)
@@ -52,49 +59,58 @@ switch_to:
 
 ---
 
-## 2. 那个 off-by-8：为什么换 Clang 后立刻 triple fault (`9fae90c`)
+## 2. 那个 off-by-8：GCC 的 `leave;ret` 与 Clang 的 RSP-relative epilogue ([`9fae90c`](https://github.com/leafvmaple/zonix-plus/commit/9fae90c))
 
-注意上面第 4 行我标了 ★：
+注意 §1 的 ★ 那两行：
 
 ```asm
     leaq 8(%rsp), %rax          # caller's RSP = RSP + 8
     movq %rax, 8(%rdi)          # from->rsp = caller's RSP
 ```
 
-最初我写的是**直接存 `%rsp`**：
+最初写的是**直接存 `%rsp`**：
 
 ```asm
     movq %rsp, 8(%rdi)          # ← 错误版本：存了包含返回地址的 RSP
 ```
 
-差别只有 8 字节。进入 `switch_to` 时，`callq` 刚刚把返回地址压栈，所以此刻的 `%rsp` 比"调用方调用前的 RSP"低 8 字节。我存的应该是**调用方调用前的 RSP**（也就是 `rip` 已经被单独存进 `context->rip`、栈上那个返回地址应当被"消费掉"之后的 RSP），但错误版本把那个还指向返回地址的 RSP 直接存了进去。
+差别只有 8 字节。进入 `switch_to` 时，`callq` 刚把返回地址压栈，所以此刻的 `%rsp` 比"调用方调用前的 RSP"低 8 字节。应该存的是**调用方调用前的 RSP**（即 `rip` 已经被单独存进 `context->rip`、栈上那个返回地址应当被"消费掉"之后的 RSP），但错误版本把那个还指向返回地址的 RSP 直接存了进去。
 
-**为什么在 GCC 下它能跑几个月不出事？**
+**为什么 GCC 下能跑 6 周不出事？**
 
-因为恢复时的对称性，恰好被 GCC 的函数 epilogue 掩盖了。GCC 给 `switch_to` 生成的收尾是经典的：
+恢复的对称性，恰好被 `switch_to` 的**调用者** —— `kernel/sched/sched.cpp` 里的 `TaskStruct::run` —— 的函数 epilogue 掩盖了。用项目原 `CXXFLAGS`（`-O0 -ffreestanding -fno-pic -fno-stack-protector -fno-exceptions -fno-rtti -mno-red-zone -mcmodel=kernel`）把 `sched.cpp` 喂给 GCC 13.3：
 
-```asm
-    leave        # mov %rbp,%rsp ; pop %rbp  —— 直接用 RBP 重建 RSP
-    ret
+```
+$ g++ <CXXFLAGS> -c kernel/sched/sched.cpp -o /tmp/sched_gcc.o
+$ objdump -d --disassemble=_ZN10TaskStruct3runEv /tmp/sched_gcc.o
+...
+  44a:   48 8d 45 dc           lea    -0x24(%rbp),%rax
+  44e:   48 89 c7              mov    %rax,%rdi
+  451:   e8 00 00 00 00        call   456 <_ZN10TaskStruct3runEv+0xc6>
+  456:   90                    nop
+  457:   c9                    leave        # ★ mov %rbp,%rsp ; pop %rbp —— RBP-relative
+  458:   c3                    ret
 ```
 
-`leave` 把 RSP 从 RBP 重新算出来，**完全不依赖我存进 context 的那个 RSP 值**。换句话说，我存错的那 8 字节，在 GCC 的恢复路径上根本没被用到 —— bug 一直在，只是没人去碰那颗地雷。
+`leave` 等于 `mov %rbp, %rsp; pop %rbp`。它把 RSP 从 RBP 重新算出来，**完全不依赖 `switch_to` 返回时栈里那个 RSP 值**。存错的 8 字节，在 GCC 的恢复路径上根本没被读到 —— bug 一直在，只是没人去碰那颗地雷。
 
-`9fae90c` 把工具链从 GCC/GNU ld 整体迁到 Clang/LLD/LLVM。Clang 给同一个函数生成的 epilogue 是 **RSP-relative** 的：
+切到 Clang 18 / LLD 后，同一个 `TaskStruct::run`：
 
-```asm
-    addq $N, %rsp    # 直接对 RSP 做加法
-    popq %rbp
-    ret
+```
+$ llvm-objdump -d --disassemble-symbols=_ZN10TaskStruct3runEv obj/x86/kernel/sched/sched.o
+...
+  ab: 48 8d 7d ec           leaq    -0x14(%rbp), %rdi
+  af: e8 00 00 00 00        callq   0xb4 <_ZN10TaskStruct3runEv+0xb4>
+  b4: 48 83 c4 40           addq    $0x40, %rsp    # ★ RSP-relative：直接对 RSP 加常数
+  b8: 5d                    popq    %rbp
+  b9: c3                    retq
 ```
 
-这下 `ret` 取返回地址的位置，就实打实依赖我存进去再恢复出来的那个 RSP。off-by-8 立刻显形：`ret` 不再跳到真正的返回地址，而是跳到栈上**偏移 8 字节处的那个值** —— 那恰好是被保存的帧指针，一个栈地址。CPU 把一个栈地址当代码执行，下一拍就是 page fault → double fault → triple fault → QEMU 重启。**屏幕上什么都没有，连 panic 都来不及打。**
+`ret` 从 `[rsp]` 取返回地址，这下实打实依赖存进去再恢复出来的那个 RSP。off-by-8 立刻显形：`ret` 不再跳到真正的返回地址，而是跳到栈上**偏移 8 字节处的那个值** —— 那恰好是被保存的帧指针，一个栈地址。CPU 把栈地址当代码取指，下一拍就是 page fault → double fault → triple fault → QEMU 重启。控制台上连 panic 都没来得及打。
 
-定位它的过程是教科书级的"二分 + 反汇编"：先确认是 `9fae90c` 引入（`git bisect` 缩到这一个 commit），再 `make disasm` 对比 GCC 和 Clang 给 `switch_to` 调用点生成的 epilogue，看到 `leave` 变成了 `addq $N,%rsp`，问题瞬间清楚。修复就是开头那两行 —— `leaq 8(%rsp), %rax` 把返回地址那 8 字节"算掉"再存。
+定位过程是教科书级的"二分 + 反汇编"：`git bisect` 缩到 `9fae90c`；项目 Makefile 里 `make ARCH=x86 disasm` 跑一次同时 dump `kernel`、`mbr`、`vbr`、`bootloader` 的全反汇编（`llvm-objdump -D` 落到 `obj/x86/*.asm`），跟修复前对照 `TaskStruct::run` 的尾巴 —— `leave;ret` 变成了 `addq $0x40, %rsp; popq %rbp; retq`，问题瞬间清楚。修复就是开头那两行：`leaq 8(%rsp), %rax` 把返回地址那 8 字节"算掉"再存。
 
-> 这个 bug 我特意挑出来，因为它教会我一条具体经验：**汇编里和 ABI 打交道的代码，正确性不能依赖某个编译器恰好生成的 epilogue 形状**。我那段手写汇编"碰巧"和 GCC 的 `leave;ret` 兼容，但那是巧合不是正确。一旦另一个编译器用 RSP-relative epilogue（这完全合法），巧合就崩了。
->
-> 更一般的版本：**换一套编译器，是一种几乎免费的 fuzzing。** 它会用一组完全不同的合法假设重新审视你的代码，把所有"我以为成立、其实只是当前编译器恰好这么做"的隐性依赖全抖出来。这次迁移除了 `switch_to`，还顺手暴露了好几个 `-Winline-new-delete`、符号比较、RWX segment 的问题（见 [#17](https://github.com/leafvmaple/blog/issues/17)）。
+GCC 的 `leave;ret` 与 Clang 的 `addq/popq/retq` 都是 SysV AMD64 ABI 合法范围内的行为 —— 编译器有权选择保不保留 `%rbp` 当帧指针、要不要用 `leave` 重建 RSP，选择依据是优化策略、是否启用 `-fomit-frame-pointer` 等开关。换一套合法但行为不同的编译器后端，把所有"碰巧成立"的隐性 ABI 假设全抖出来：这次 GCC→Clang 工具链迁移除了暴露 `switch_to`，还顺手照出了未实现的 `__cxa_pure_virtual` / `atexit` / `operator new` 桩、UEFI loader 的 RWX segment 违规、若干 `-Winline-new-delete` 告警（见 [#17](https://github.com/leafvmaple/blog/issues/17)）—— 一次换编译器 = 一次几乎免费的 fuzzing。
 
 ---
 
@@ -133,11 +149,11 @@ trapret:
 
 也就是说，**新进程的"诞生"被伪装成一次中断返回**。`iretq` 弹出我们在 TrapFrame 里精心填好的 `rip`（内核线程的入口函数）、`cs`、`rflags`、`rsp`、`ss`，CPU 就"以为"自己刚处理完一个中断，干干净净地从内核线程入口开始跑。
 
-这个设计的优雅在于：**所有进程的入口都统一成"从中断返回"**。无论是内核线程（`arch_setup_kthread_tf` 填的 TrapFrame）还是用户态进程（`arch_setup_user_tf` 填 `cs=USER_CS`），区别只在 TrapFrame 里几个段寄存器的值，复用的是同一条 `trapret` 路径。这就是为什么 `forkret` 不需要任何自己的代码，一个 fall-through 就够了。
+这个设计的优雅在于：**所有进程的入口都统一成"从中断返回"**。无论是内核线程（`arch_setup_kthread_tf` 填的 TrapFrame）还是用户态进程（`arch_setup_user_tf` 填 `cs=USER_CS`），区别只在 TrapFrame 里几个段寄存器的值，复用的是同一条 `trapret` 路径 —— 这就是为什么 `forkret` 不需要任何自己的代码，一个 fall-through 就够了。
 
-> **后续兑现**：写这篇时用户态还是"将来"，现在 `exec` 子系统已经落地——它正是靠 `arch_setup_user_tf` 把 TrapFrame 的 `cs/ss` 填成 `USER_CS/USER_DS`，复用这里这条 fork + `trapret` 路径，让 `iretq` 在恢复时发现 RPL=3 自动降到 ring 3。**加用户态时，本节这套机制一行没改**——这是"接缝在第一天划好"最直接的回报。完整的用户态执行链路见 [#18](https://github.com/leafvmaple/blog/issues/18)。
+这套机制兑现于 2026-04-08 的 `exec` 子系统（[`295581b`](https://github.com/leafvmaple/zonix-plus/commit/295581b)）：写本文最初版时用户态还是"将来"，现在 `exec` 正是靠 `arch_setup_user_tf` 把 TrapFrame 的 `cs/ss` 填成 `USER_CS/USER_DS`，复用这条 fork + `trapret` 路径，让 `iretq` 在恢复时发现 RPL=3 自动降到 ring 3。**加用户态时，本节这套机制一行没改**。完整的用户态执行链路见 [#18](https://github.com/leafvmaple/blog/issues/18)。
 
-> 这里又是一个 `arch_*()` 接缝：`arch_setup_kthread_tf` / `arch_fixup_fork_tf` / `arch_setup_user_tf` 把"一个新进程的初始陷阱帧长什么样"这件**纯架构相关**的事关进 `arch/`，`fork` 本身（在 `kernel/sched/sched.cpp`，完全架构无关）只管调它们。x86 上填 `rdi/rsi/rflags.IF/cs`，aarch64 上填 `x0/x1/SPSR/ELR` —— `fork` 一个字都不用改。
+`arch_setup_kthread_tf` / `arch_fixup_fork_tf` / `arch_setup_user_tf` 这一组接缝也把"一个新进程的初始陷阱帧长什么样"这件**纯架构相关**的事关进 `arch/`：`fork` 本身（在 `kernel/sched/sched.cpp`，完全架构无关）只管调它们。x86 上填 `rdi/rsi/rflags.IF/cs`，aarch64 上填 `x0/x1/SPSR/ELR` —— `fork` 一个字不动。
 
 ---
 
@@ -194,9 +210,7 @@ int SchedulerPolicy::calc_time_slice(int priority) const {
 }
 ```
 
-这套"优先级决定**谁先跑 + 跑多久**"是抢占式优先级 round-robin 的经典形态，和 Linux O(1) 调度器早期的思路同源，只是 Zonix 砍到了最小可用集。
-
-> 设计立场：调度**策略**（`SchedulerPolicy`：选谁、时间片多长）和调度**机制**（`TaskManager`：切换、链表、统计）是分开的两个类。想换成 CFS 风格的红黑树或多级反馈队列，只需要替换 `SchedulerPolicy`，`TaskManager::schedule()` 那套 `pick_next → run` 的骨架不动。这又是 mini-cocos 系列里反复出现的"机制/策略分离"。
+这套"优先级决定**谁先跑 + 跑多久**"是抢占式优先级 round-robin 的经典形态，和 Linux O(1) 调度器早期的思路同源，只是 Zonix 砍到了最小可用集。调度**策略**（`SchedulerPolicy`：选谁、时间片多长）和调度**机制**（`TaskManager`：切换、链表、统计）是分开的两个类 —— 想换成 CFS 风格的红黑树或多级反馈队列，只需替换 `SchedulerPolicy`，`TaskManager::schedule()` 那套 `pick_next → run` 的骨架不动。这又是 mini-cocos 系列里反复出现的"机制/策略分离"。
 
 ---
 
@@ -225,11 +239,11 @@ void TaskStruct::run() {
 
 <!-- 后续调度 / 上下文切换的演进追加在这里，按时间倒序。每条带 commit 链接 + 一两句说明。 -->
 
-- 2026-05-22：本节描述的 fork + `trapret` 机制被用户态执行复用——`exec` 通过 `arch_setup_user_tf` 走同一条路径把进程降到 ring 3（[`295581b`](https://github.com/leafvmaple/zonix-plus/commit/295581b)），§3 的接缝零改动。完整链路见新增子篇 [#18](https://github.com/leafvmaple/blog/issues/18)。
-- 2026-04-07：[`9fae90c`](https://github.com/leafvmaple/zonix-plus/commit/9fae90c) GCC→Clang/LLD 工具链迁移暴露并修复了 `switch_to` 的 RSP off-by-8（见 §2）。这是本文最核心的一个故事。
-- 2026-02-12：[`17869d7`](https://github.com/leafvmaple/zonix-plus/commit/17869d7) 加入同步原语 + 抢占式优先级调度，调度从协作式 yield 升级为时间片驱动的 `need_resched`（见 §4）。
-- 2026-02-12：[`c0c8b1f`](https://github.com/leafvmaple/zonix-plus/commit/c0c8b1f) 现代化 scheduler/链表迭代，引入 `circular_from` 环形游标（见 §4.2），并把驱动命名对齐。
+- 2026-04-08：本节描述的 fork + `trapret` 机制被用户态执行复用——`exec` 通过 `arch_setup_user_tf` 走同一条路径把进程降到 ring 3（[`295581b`](https://github.com/leafvmaple/zonix-plus/commit/295581b)），§3 的接缝零改动。完整链路见新增子篇 [#18](https://github.com/leafvmaple/blog/issues/18)。
+- 2026-03-23：[`c0c8b1f`](https://github.com/leafvmaple/zonix-plus/commit/c0c8b1f) 现代化 scheduler/链表迭代，引入 `circular_from` 环形游标（见 §4.2），并把驱动命名对齐。
+- 2026-03-13：[`17869d7`](https://github.com/leafvmaple/zonix-plus/commit/17869d7) 加入同步原语 + 抢占式优先级调度，调度从协作式 yield 升级为时间片驱动的 `need_resched`（见 §4）。
+- 2026-03-12：[`9fae90c`](https://github.com/leafvmaple/zonix-plus/commit/9fae90c) GCC→Clang/LLD 工具链迁移暴露并修复了 `switch_to` 的 RSP off-by-8（见 §2）。这是本文最核心的一个故事。
 
 ---
 
-*本文是 [Zonix OS 设计复盘](https://github.com/leafvmaple/blog/issues/11) 系列的衍生深读。系列其它文章见复盘主文末尾的索引。*
+*仓库：[leafvmaple/zonix-plus](https://github.com/leafvmaple/zonix-plus)。本文属于 [Zonix OS 系列](https://github.com/leafvmaple/blog/issues/11)。*

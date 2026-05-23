@@ -1,10 +1,24 @@
-# 遍历中修改容器：mini-cocos 里反复出现的 pending queue + 软删除 + 脏排序
+# 迭代中 erase 自己：iterator 失效的 bug 一周才显形一次
 
 > 仓库：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)
 > 系列：[mini-cocos 设计复盘 #2](https://github.com/leafvmaple/blog/issues/2) 的衍生深读
 > 涉及子系统：`Scheduler` / `EventDispatcher`，以及任何"在遍历中可能被修改"的系统
 
-写引擎写得越久，越觉得这个 pattern 是**比任何具体子系统都更基础的工程语言**。它和"语言/框架无关、出现频率高、做错时症状极隐蔽"这三条全占了。这一篇把它从 mini-cocos 的 Scheduler 和 EventDispatcher 里抽出来，单独说清楚什么时候要用、怎么实现、有哪些反模式。
+这个 pattern 在 mini-cocos 三个独立子系统里以相同的形态出现：
+
+```
+$ wc -l src/base/ZCScheduler.cpp src/base/ZCActionManager.cpp src/base/ZCEventDispatcher.cpp
+  232 src/base/ZCScheduler.cpp
+  167 src/base/ZCActionManager.cpp
+  394 src/base/ZCEventDispatcher.cpp
+  793 total
+$ grep -rE "_pending|_inDispatch|_dirty.*Priority" src/base/ZCScheduler.cpp \
+                                                   src/base/ZCActionManager.cpp \
+                                                   src/base/ZCEventDispatcher.* | wc -l
+30+                         # 三套子系统共用同一套 pending + tombstone + dirty 标志
+```
+
+特点是"语言/框架无关、出现频率高、做错时症状极隐蔽"三条全占。这一篇把它从 `Scheduler` / `ActionManager` / `EventDispatcher` 里抽出来，单独说清楚什么时候要用、怎么实现、有哪些反模式。
 
 ## 1. 问题的本体：迭代器失效与"自咬"
 
@@ -251,4 +265,4 @@ private:
 
 ---
 
-*本文是 [mini-cocos 设计复盘](https://github.com/leafvmaple/blog/issues/2) 系列的衍生深读。系列其它文章见复盘主文末尾的索引。*
+*仓库：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)。本文属于 [mini-cocos 系列](https://github.com/leafvmaple/blog/issues/2)。*

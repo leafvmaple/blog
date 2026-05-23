@@ -1,12 +1,23 @@
-# mini-cocos の 3 つのメモリモデル：`Ref`、autorelease、そして `shared_ptr` が合わない場所
+# `shared_ptr` に無い意味論：autorelease の「このフレームで死ぬ」
 
 > リポジトリ：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)
 > シリーズ：[mini-cocos 設計復盤 #2](https://github.com/leafvmaple/blog/issues/2) のサブ記事
 > 関連サブシステム：`Ref` / `AutoreleasePool` / `TextureCache` / `Animation`
 
-この記事を書いた発端は、mini-cocos の中に **3 種類のメモリ管理スタイルが共存している** ことです：cocos2d-x 風の `Ref` + autorelease、TextureCache の手書き refcount、そして一部の STL / Lua 境界で散発的に出現する `std::shared_ptr`。このミックスはコードレビューでよく「なぜ統一しないのか」と聞かれます。答えは：**対象オブジェクトごとに最適解が違うから**、無理に統一すると必ずどこかで意味論が犠牲になります。
+mini-cocos の現在のメモリモデル分布（grep 実測）：
 
-以下、各モデルが mini-cocos で何を担っているかを明確にし、「いつ参照カウントを **使ってはいけないか**」を独立して論じます —— 体系の中で最も見落とされやすく、ミスると一番見つけにくい部分です。
+```
+$ grep -rE "\bautorelease\(\)|->retain\(\)|->release\(\)" src/ | wc -l
+56                          # Ref + autorelease (cocos 風) の呼び出し点
+$ grep -rE "\bunique_ptr<|mstd::make_unique" src/ | wc -l
+21                          # std::unique_ptr 単一所有権
+$ grep -rE "\bshared_ptr<|make_shared" src/ | wc -l
+0                           # shared_ptr —— 一箇所も無く、これは意図的
+```
+
+3 つの数字が 3 種類の異なるオブジェクト生存戦略に対応する：**`Ref` + autorelease が「値オブジェクト + シーングラフノード + Lua 公開オブジェクト」を、手書き refcount が「GPU / IO リソース」を、`unique_ptr` が「単一所有者の内部コンポーネント」を担う**。`shared_ptr` の 0 は偶然ではなく設計上の立場 —— §2 で詳述する。
+
+本記事は各モデルが mini-cocos で何を担っているかを明確にし、「いつ参照カウントを**使ってはいけないか**」と「なぜ `shared_ptr` を断固使わないか」の 2 点に重点を置く —— 体系の中で最も見落とされやすく、ミスると一番見つけにくい部分だ。
 
 ## 1. `Ref` + AutoreleasePool が担うもの
 
@@ -120,13 +131,7 @@ sprite->runAction(Animate::create(anim));                 // Animate 内部で r
 
 これが `Ref` 体系で最も気持ち良い使い方：一時生成、対象に消費させ、自分は保持しない —— 呼び出しコード上にライフタイム関連の記述がほぼ出てきません。
 
-> この経験を特に取り上げたい：**ref-counting は宗教ではなく道具**。
->
-> - **リソース**（GPU VRAM、ファイルハンドル、socket）→ 明示・即時解放必須、手書き refcount。
-> - **値オブジェクト**（アニメメタデータ、設定、メッセージ）→ autorelease pool が向く。
-> - **C++/スクリプト境界をまたぐオブジェクト** → `Ref`、C++ 側に所有権主導を残す。
->
-> 1 つのエンジンに 2 〜 3 種のメモリモデルが共存するのは常態であり、設計欠陥ではありません。**1 つのモデルで全てを解こうとするのが設計欠陥** です。
+ref-counting は宗教ではなく道具：**リソース**（GPU VRAM、ファイルハンドル、socket）は明示・即時解放必須なので手書き refcount；**値オブジェクト**（アニメメタデータ、設定、メッセージ）は autorelease pool が向く；**C++/スクリプト境界をまたぐオブジェクト**は `Ref`、C++ 側に所有権主導を残す。1 つのエンジンに 2〜3 種のメモリモデルが共存するのは常態であり、設計欠陥ではない —— **1 つのモデルで全てを解こうとするのが設計欠陥**だ。
 
 ## 5. 決定マトリクス
 
@@ -151,4 +156,4 @@ mini-cocos では下表に従ってメモリモデルを決めます。新型を
 
 ---
 
-*本記事は [mini-cocos 設計復盤](https://github.com/leafvmaple/blog/issues/2) シリーズのサブ記事です。シリーズ他記事は主記事末尾のインデックスを参照。*
+*リポジトリ：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)。本記事は [mini-cocos シリーズ](https://github.com/leafvmaple/blog/issues/2) の一篇。*

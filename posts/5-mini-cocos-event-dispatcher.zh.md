@@ -1,10 +1,24 @@
-# EventDispatcher：三次迭代走到双优先级链 + 三件套
+# EventDispatcher 三次重写：双优先级链 + pending queue + 嵌套 dispatch 计数器
 
 > 仓库：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)
 > 系列：[mini-cocos 设计复盘 #2](https://github.com/leafvmaple/blog/issues/2) 的衍生深读
 > 涉及子系统：`EventDispatcher` / `EventListener` / `Touch` 派发
 
-EventDispatcher 是这套引擎里被改动最多的子系统 —— 我前后写了三个版本，第一版彻底废弃，第二版能跑但被嵌套 dispatch 打穿，第三版才稳定下来。这一篇按时间顺序复盘三次迭代，能讲清楚**为什么"听起来很对"的第一版几乎一定会被改掉**。
+`src/base/ZCEventDispatcher.cpp` 是 mini-cocos 里被改动最多的子系统 —— `git log --oneline src/base/ZCEventDispatcher.*` 列出 9 个 commit，其中 3 次是结构性重写：
+
+```
+fb4300f  feat(base): add Event and EventDispatcher with per-frame polling   ← v1
+b3cc36c  feat(base): factor EventListener abstraction and add Application entry
+db6b6dd  refactor(events): adopt cocos2d-x fixed / scene-graph priority lists ← v2
+bf4b46a  refactor(events): use std::erase_if for listener cleanup
+6c1d2b3  refactor(events): split keyboard and mouse listeners into separate files
+90acab7  refactor(events): deduplicate dispatch paths in EventDispatcher    ← v3
+bacb0f9  feat(ui): respect scene-graph occlusion in widget hit-testing
+67633ba  refactor: simplify ActionInterval and tidy EventDispatcher
+be88a31  feat(stl): route data-structure/algorithm STL through mstd alias
+```
+
+v1（`fb4300f`）：全局回调表，一周后被三个独立问题打穿。v2（`db6b6dd`）：双优先级链 + `EventListener` 对象，能跑但嵌套 dispatch 触发 listener 集合 mutate 时迭代器失效。v3（`90acab7`）：上 [`_inDispatch` 计数器 + 软删除 + pending queue](https://github.com/leafvmaple/blog/issues/4)，结构稳定至今。这一篇按时间顺序复盘三次迭代，说清楚**为什么"听起来很对"的 v1 几乎一定会被改掉**。
 
 ## 1. 第一版：全局回调表
 
@@ -186,16 +200,11 @@ modal 不依赖 scene-graph 顺序（dialog 可能 z 序低但逻辑上覆盖一
 
 如果未来要加复杂 UI 框架，把 bubble 阶段补上不需要改 EventDispatcher 主结构 —— 在 walkAndCallback 后追加一个反向遍历就行。**预留口在 walk 阶段而不是 listener 数据结构里**，这是有意为之的。
 
-## 6. 经验
+## 6. 三件事必须在第一版考虑完
 
-写第三版时最大的收获：
+**优先级、生命周期、嵌套调用安全** —— 它们不会随项目长大而自动出现；缺哪一个，过几周一定会写一个"专门绕过 EventDispatcher"的偷渡通道。等到偷渡通道写到三四条，就要全部推倒重来。具体到 API 表面：
 
-> **优先级、生命周期、嵌套调用安全 —— 这三件事必须在第一版就考虑完。**
->
-> 它们不会随项目长大而自动出现；缺哪一个，过几周一定会写一个"专门绕过 EventDispatcher" 的偷渡通道。等到偷渡通道写到三四条，就要全部推倒重来。
-
-具体到 API 表面：
-- 任何"回调"系统，第一个参数都该是回调对象（listener），不要直接吃 `std::function`。这样优先级、enable/disable、按对象/节点批量 remove 都有地方挂。
+- 任何"回调"系统，第一个参数都该是回调对象（listener），不要直接吃 `std::function` —— 优先级、enable/disable、按对象/节点批量 remove 才有地方挂。
 - 派发函数永远要支持嵌套，用计数器不要用 bool。
 - 软删除 + pending add，永远默认就走 —— 即使第一版用不上，做对成本极低，做错成本极高。
 
@@ -207,4 +216,4 @@ modal 不依赖 scene-graph 顺序（dialog 可能 z 序低但逻辑上覆盖一
 
 ---
 
-*本文是 [mini-cocos 设计复盘](https://github.com/leafvmaple/blog/issues/2) 系列的衍生深读。三件套通用 pattern 见 [#4](https://github.com/leafvmaple/blog/issues/4)。*
+*仓库：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)。本文属于 [mini-cocos 系列](https://github.com/leafvmaple/blog/issues/2)；三件套通用 pattern 见 [#4](https://github.com/leafvmaple/blog/issues/4)。*

@@ -1,10 +1,23 @@
-# 渲染队列 sortKey 与 OpenGL / Vulkan 的 RHI 抽象
+# 一个 64 位整数排完整帧 draw call
 
 > 仓库：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)
 > 系列：[mini-cocos 设计复盘 #2](https://github.com/leafvmaple/blog/issues/2) 的衍生深读
 > 涉及子系统：`Renderer` / `RenderQueue` / `RHI` / `OpenGL` / `Vulkan` 后端
 
-这一篇把渲染部分两件互相独立又一定要一起讲的事情合在一起：**sortKey 编码**（怎么把"按什么顺序画"塞进一个 64-bit 整数里，让排序与命中合并都用同一个 key）和 **RHI 抽象**（怎么用同一份引擎代码顶住 OpenGL 与 Vulkan 两套截然不同的 API 模型）。前者是数据，后者是接口；它们共同决定了"主线程构造命令、渲染线程消费命令"这条流水线长什么样。
+mini-cocos 的渲染层用两件事撑住"主线程构造命令、渲染线程消费命令"这条流水线：
+
+```
+$ wc -l src/platform/opengl/*.cpp src/platform/opengl/*.h
+   ...
+   900 total                  # OpenGL 3.3 后端
+$ wc -l src/platform/vulkan/*.cpp src/platform/vulkan/*.h
+   ...
+  2311 total                  # Vulkan 后端，是 GL 的 2.6×
+$ grep -cE "= 0;\s*$" src/base/ZCRenderDevice.h
+6                              # RenderDevice 接口的纯虚函数数：6 个撑起 2.6× 规模差
+```
+
+两件事是 **sortKey 编码**（一个 64-bit 整数同时承担透明分段 / state 合并 / z 排序的排序键）和 **RHI 抽象**（6 个纯虚函数把两种截然不同的 API 模型 —— OpenGL 的隐式状态机 vs. Vulkan 的显式命令缓冲 —— 收敛到同一组调用）。前者是数据，后者是接口。
 
 ## 1. 为什么不能直接按 Z 序画
 
@@ -238,4 +251,4 @@ fence 信号回来 → 处理 pending deletion
 
 ---
 
-*本文是 [mini-cocos 设计复盘](https://github.com/leafvmaple/blog/issues/2) 系列的衍生深读。*
+*仓库：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)。本文属于 [mini-cocos 系列](https://github.com/leafvmaple/blog/issues/2)。*

@@ -1,10 +1,21 @@
-# Lua バインディング：境界の安全性、メタテーブル継承、リスナーのライフタイム
+# Lua / C++ 境界の所有権は非対称：sol2 のデフォルト挙動は逆方向
 
 > リポジトリ：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)
 > シリーズ：[mini-cocos 設計復盤 #2](https://github.com/leafvmaple/blog/issues/2) のサブ記事
 > 関連サブシステム：`LuaEngine` / `tolua bridge` / `lua_userdata` / `Lua listener` ライフタイム
 
-ゲームエンジンの中で Lua バインディングは「最も単純な API、最も簡単に踏む地雷原」のサブシステムでしょう：表面上は `lua_pushcfunction(L, lua_Sprite_create)` を 1 つ書くだけ、しかし実は **C++ と Lua の 2 種のオブジェクトライフタイム + 2 種の例外モデル + 2 種の thread モデルが交差する境界**。本稿では mini-cocos の binding 設計を、UAF を確実に発生させない 3 つの「境界規則」と、リスナー lifecycle 罠 1 つに焦点を当てて整理します。
+主流アプローチは [sol2](https://github.com/ThePhD/sol2) を直接使うこと —— 3 行のテンプレートで C++ クラスを Lua にバインドできる。mini-cocos は使わなかった。代償：
+
+```
+$ wc -l src/scripting/*
+   130 src/scripting/ZCLuaEngine.cpp     # Lua state 保持 + エントリ
+    24 src/scripting/ZCLuaEngine.h
+  1364 src/scripting/ZCLuaManual.cpp     # 手書き metatable がすべてここ
+    11 src/scripting/ZCLuaManual.h
+  1529 total
+```
+
+1,529 行の手書き metatable —— sol2 の同等機能は約 3 行で済む。この 1.5k 行で買い戻したのは **(1) コンパイル速度（sol2 の重テンプレートは単一 .cpp で数十秒、mini-cocos は単一 .cpp 全部秒単位）、(2) エラーメッセージの可読性（200 行のテンプレートエラーが無い）、(3) Lua/C++ 境界の `_alive` フラグがもたらす「オブジェクトが Lua 側で保持されている最中に C++ 側で delete されているかもしれない」状況への安全性** —— どのバインディング方式でも解決しなければならないが、はっきり書かれていない部分だ。本稿前半は手書きコードの形を、後半は境界をまたぐライフタイムを論じる。
 
 ## 0. 前提：なぜそもそも Lua なのか
 
@@ -285,4 +296,4 @@ Lua バインディングを書き終えての最大の経験：
 
 ---
 
-*本記事は [mini-cocos 設計復盤](https://github.com/leafvmaple/blog/issues/2) シリーズのサブ記事です。listener lifetime 問題は EventDispatcher（[#5](https://github.com/leafvmaple/blog/issues/5)）と memory model（[#3](https://github.com/leafvmaple/blog/issues/3)）に強く関連。*
+*リポジトリ：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)。本記事は [mini-cocos シリーズ](https://github.com/leafvmaple/blog/issues/2) の一篇；listener lifetime 問題は EventDispatcher（[#5](https://github.com/leafvmaple/blog/issues/5)）と memory model（[#3](https://github.com/leafvmaple/blog/issues/3)）に強く関連。*

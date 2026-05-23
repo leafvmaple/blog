@@ -1,10 +1,24 @@
-# EventDispatcher：3 度の反復で辿り着いた二優先度チェーン + 三点セット
+# EventDispatcher 3 度の書き直し：二優先度チェーン + pending queue + ネスト dispatch カウンタ
 
 > リポジトリ：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)
 > シリーズ：[mini-cocos 設計復盤 #2](https://github.com/leafvmaple/blog/issues/2) のサブ記事
 > 関連サブシステム：`EventDispatcher` / `EventListener` / `Touch` 派遣
 
-EventDispatcher はこのエンジンで最も書き直したサブシステムです —— 計 3 版書きました。第 1 版は廃棄、第 2 版は動くがネスト dispatch で陥落、第 3 版でようやく安定。本稿では時系列で 3 度の反復を復盤し、**「正しそう」な第 1 版がほぼ確実に作り直しになる理由** を明確にします。
+`src/base/ZCEventDispatcher.cpp` は mini-cocos で最も書き直されたサブシステム —— `git log --oneline src/base/ZCEventDispatcher.*` は 9 コミットを列挙し、そのうち 3 つが構造的な書き直し：
+
+```
+fb4300f  feat(base): add Event and EventDispatcher with per-frame polling   ← v1
+b3cc36c  feat(base): factor EventListener abstraction and add Application entry
+db6b6dd  refactor(events): adopt cocos2d-x fixed / scene-graph priority lists ← v2
+bf4b46a  refactor(events): use std::erase_if for listener cleanup
+6c1d2b3  refactor(events): split keyboard and mouse listeners into separate files
+90acab7  refactor(events): deduplicate dispatch paths in EventDispatcher    ← v3
+bacb0f9  feat(ui): respect scene-graph occlusion in widget hit-testing
+67633ba  refactor: simplify ActionInterval and tidy EventDispatcher
+be88a31  feat(stl): route data-structure/algorithm STL through mstd alias
+```
+
+v1（`fb4300f`）：グローバルコールバック表、1 週間で 3 つの独立問題に陥落。v2（`db6b6dd`）：二優先度チェーン + `EventListener` オブジェクト、動くがネスト dispatch で listener 集合を mutate するとイテレータ無効化。v3（`90acab7`）：[`_inDispatch` カウンタ + ソフト削除 + pending queue](https://github.com/leafvmaple/blog/issues/4) を載せ、構造はそのまま現在まで安定。本稿は時系列で 3 度の反復を振り返り、**「正しそう」な v1 がほぼ確実に作り直しになる理由**を明確にする。
 
 ## 1. 第 1 版：グローバルコールバック表
 
@@ -188,14 +202,9 @@ modal は scene-graph 順に依存しない（dialog は z 順が低くても論
 
 ## 6. 経験
 
-第 3 版を書いた時の最大の収穫：
+**優先度・ライフタイム・ネスト呼び出し安全 —— この 3 つは第 1 版で全て考えておかねばならない**。プロジェクトの拡大で自動的に湧き出るものではない；どれか 1 つでも欠けると、数週間以内にきっと「EventDispatcher を回避する専用の密貿易チャネル」を書くハメになる。密貿易が 3、4 本溜まったら全て作り直しになる。具体的に API 表面では：
 
-> **優先度、ライフタイム、ネスト呼び出し安全 —— この 3 つは第 1 版で全て考えておかねばならない**。
->
-> プロジェクトの拡大で自動的に湧き出るものではない；どれか 1 つでも欠けると、数週間以内にきっと「EventDispatcher を回避する専用の密貿易チャネル」を書くハメになる。密貿易が 3、4 本溜まったら全て作り直しになる。
-
-具体的に API 表面では：
-- いかなる「コールバック」系も、第 1 引数はコールバックオブジェクト（listener）にする、直接 `std::function` を食わない。これで優先度、enable/disable、オブジェクト／ノード単位の一括 remove に掛けるフックがある。
+- いかなる「コールバック」系も、第 1 引数はコールバックオブジェクト（listener）にする、直接 `std::function` を食わない —— 優先度、enable/disable、オブジェクト/ノード単位の一括 remove に掛けるフックがあるため。
 - 派遣関数は常にネスト対応、bool ではなくカウンタ。
 - ソフト削除 + pending add は常時デフォルトで走らせる —— 第 1 版で使わなくても、正解実装コストは極小、誤実装コストは極大。
 
@@ -207,4 +216,4 @@ modal は scene-graph 順に依存しない（dialog は z 順が低くても論
 
 ---
 
-*本記事は [mini-cocos 設計復盤](https://github.com/leafvmaple/blog/issues/2) シリーズのサブ記事です。三点セット汎用パターンは [#4](https://github.com/leafvmaple/blog/issues/4) を参照。*
+*リポジトリ：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)。本記事は [mini-cocos シリーズ](https://github.com/leafvmaple/blog/issues/2) の一篇；三点セット汎用パターンは [#4](https://github.com/leafvmaple/blog/issues/4) を参照。*

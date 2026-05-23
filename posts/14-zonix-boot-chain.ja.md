@@ -1,14 +1,19 @@
-# 電源投入から `kern_init` まで：Zonix のブートチェーンと boot_info 統一プロトコル
+# BIOS と UEFI は `head.S` で合流：`rdi=&BootInfo`
 
 > リポジトリ：[leafvmaple/zonix-plus](https://github.com/leafvmaple/zonix-plus)
 > シリーズ：[Zonix OS 設計振り返り #11](https://github.com/leafvmaple/blog/issues/11) の詳細記事
 > 対象サブシステム：`arch/x86/boot/{bios,uefi}/` / `arch/x86/kernel/head.S` / `include/kernel/bootinfo.h`
 
-ブートはカーネルで**唯一「足元の地盤が歩きながら崩れる」コード**です。CPU モードを切り替え、ページテーブルを再構築し、スタックを替える —— その各ステップが、次の命令のあるアドレスを無効化し得る。この記事では三つを述べます。
+x86 で zonix-plus は BIOS と UEFI の両ファームウェアをサポートし、最終的な成果物は異なる入口から出発するがすべて同じ `head.S` へ合流する：
 
-1. BIOS と UEFI というまったく異なる二つのブート経路が、どうカーネルの**同一の入口・同一の `BootInfo`** に収束するか;
-2. `head.S` の「物理アドレス上で走るのに仮想アドレスのシンボルを参照する」コードが、`REALLOC` マクロ一つでどう生き延びるか;
-3. ブート期で最も直感に反する一歩 —— **CR3 を替えると同時に、まずスタックを替えねばならない**、なぜそれが UEFI 経路で生死を分けるか。
+```
+bin/x86/mbr         3,744 バイト   .text セクション 512 バイト (16-bit real mode)
+bin/x86/vbr         6,408 バイト   .text セクション 512 バイト (16-bit real mode, FAT32 を解する)
+bin/x86/bootloader  19,100 バイト  (32-bit protected mode, ELF loader)
+arch/x86/kernel/head.S  255 行     x86 BIOS / UEFI / 高位半切替の合流点
+```
+
+ブート期はカーネルで**足元の地盤が歩きながら崩れる**コードだ：CPU モードを切り替え（real → protected → long）、ページテーブルを再構築（恒等マップ → 高位半マップ）、スタックを替える —— その各ステップが次の命令のあるアドレスを無効化し得る。この記事では四つを見る —— BIOS / UEFI 双経路がどう `head.S` の `rdi=&BootInfo` で合流するか、`REALLOC` マクロが物理アドレス上で走るコードに仮想リンクシンボルを参照させる仕組み、CR3 を切り替えるのと同時にスタックも切り替える方法（UEFI 経路の致命点）、そして boot_info が BSS クリアを免れる仕掛け。
 
 ---
 
@@ -127,7 +132,7 @@ movq %rax, %cr3
 
 これがブート期で最も直感に反する一歩：**ページテーブル切替はコードアドレスだけでなくスタックアドレスにも効く。** UEFI ファームウェアが引き渡すとき、RSP はファームウェアが割り当てたある高位スタックを指しているかもしれない。我々の新テーブルにその高位アドレスは無い —— だから `mov %rax, %cr3` が実行された途端、次の `push`/`call`/`ret` がスタックに触れてフォルト死。修正は CR3 を替える**前**に RSP を `0x7000`（必ず恒等マップに覆われる低位アドレス）へ移すこと。BIOS 経路は bootloader がとうにスタックを低位に置いていたため偶然この地雷を避け、よってこのバグは UEFI 経路でのみ顕在化 —— またも「ブート経路を替えるのは一種の fuzzing」の例です（[#12](https://github.com/leafvmaple/blog/issues/12) のコンパイラを替えて `switch_to` バグが暴かれた同型の物語を参照）。
 
-> 教訓：「アドレス → 内容」のマッピングを変える操作（CR3 切替、TTBR 切替、GDT 変更、relocate）はすべて、こう問え：**「今まさに踏んでいる各地（コード、スタック、これからアクセスするデータ）は新マッピングでまだ存在するか？」** ブート期のほとんどの triple fault は、切替の瞬間にどこかの「足元の地」が崩れたもの。これをチェックリストにすれば、QEMU を繰り返し再起動しながら呆然とする時間を大量に節約できる。
+「アドレス → 内容」のマッピングを変える操作（CR3 切替、TTBR 切替、GDT 変更、relocate）はすべて一つ問う必要がある：**今まさに踏んでいる各地（コード、スタック、これからアクセスするデータ）は新マッピングでまだ存在するか**。ブート期のほとんどの triple fault は、切替の瞬間にどこかの「足元の地」が崩れたものだ。
 
 高位半へ跳び、恒等マップを消した後は平凡です。BSS をクリア（bootloader はセグメントをロードするだけで未初期化データのゼロ化はしない）、本物のカーネルスタックを設定、`lidt` で割り込みテーブルをロード、保存した `BootInfo` 物理アドレスを `rdi` に置き、`call kern_init`。制御はついに C++ へ渡る。
 
@@ -152,10 +157,13 @@ __kernel_boot_info:
 
 <!-- ブートチェーンの今後の進化はここに、時系列降順で。各項に commit リンク + 一言。 -->
 
-- 2026-04-07：[`4d92e4f`](https://github.com/leafvmaple/zonix-plus/commit/4d92e4f) UEFI ブートフローを整理し riscv64 CI を追加；[`45637c7`](https://github.com/leafvmaple/zonix-plus/commit/45637c7) UEFI ブート補助コードを収束、Bochs サポートを除去、ブート経路をさらに統一。
-- 2026-03-12：[`921ea7b`](https://github.com/leafvmaple/zonix-plus/commit/921ea7b) / [`f006423`](https://github.com/leafvmaple/zonix-plus/commit/f006423) UEFI と BIOS の bootloader を C から C++ へ移行、エンコード規約を統一；[`1437166`](https://github.com/leafvmaple/zonix-plus/commit/1437166) UEFI ツールチェーンを MinGW GCC から `clang --target=x86_64-pc-windows-msvc` + `lld-link` へ（[#17](https://github.com/leafvmaple/blog/issues/17) 参照）。
-- 2026-02-12：[`6ff8a32`](https://github.com/leafvmaple/zonix-plus/commit/6ff8a32) BIOS / UEFI を同一の 64 ビット `head.S` 入口へ統一し kernel config システムを導入；[`501c4b8`](https://github.com/leafvmaple/zonix-plus/commit/501c4b8) 32→64 long mode 切替を `entry.S` に抽出し bootlib を共有（§1 参照）。
+- 2026-04-02：[`4d92e4f`](https://github.com/leafvmaple/zonix-plus/commit/4d92e4f) UEFI ブートフローを整理し riscv64 CI を追加。
+- 2026-03-30：[`45637c7`](https://github.com/leafvmaple/zonix-plus/commit/45637c7) UEFI ブート補助コードを収束、Bochs サポートを除去、ブート経路をさらに統一；[`f006423`](https://github.com/leafvmaple/zonix-plus/commit/f006423) BIOS bootloader を C から C++ へ移行。
+- 2026-03-27：[`921ea7b`](https://github.com/leafvmaple/zonix-plus/commit/921ea7b) UEFI 入口を C から C++ へ移行、エンコード規約を統一。
+- 2026-03-24：[`1437166`](https://github.com/leafvmaple/zonix-plus/commit/1437166) UEFI ツールチェーンを MinGW GCC から `clang --target=x86_64-pc-windows-msvc` + `lld-link` へ（[#17](https://github.com/leafvmaple/blog/issues/17) 参照）。
+- 2026-02-12：[`501c4b8`](https://github.com/leafvmaple/zonix-plus/commit/501c4b8) 32→64 long mode 切替を `entry.S` に抽出し bootlib を共有（§1 参照）。
+- 2026-02-10：[`6ff8a32`](https://github.com/leafvmaple/zonix-plus/commit/6ff8a32) BIOS / UEFI を同一の 64 ビット `head.S` 入口へ統一し kernel config システムを導入。
 
 ---
 
-*本記事は [Zonix OS 設計振り返り](https://github.com/leafvmaple/blog/issues/11) シリーズの詳細記事です。他の記事は振り返り本編末尾のインデックスから。*
+*リポジトリ：[leafvmaple/zonix-plus](https://github.com/leafvmaple/zonix-plus)。本記事は [Zonix OS シリーズ](https://github.com/leafvmaple/blog/issues/11) の一篇。*

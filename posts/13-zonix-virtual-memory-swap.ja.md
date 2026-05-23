@@ -1,24 +1,22 @@
-# スワップ済みページ番号を PTE に詰め込む：Zonix の仮想メモリ、ページフォルト、swap
+# PTE の上位 56 ビットはタダで使える swap テーブル
 
 > リポジトリ：[leafvmaple/zonix-plus](https://github.com/leafvmaple/zonix-plus)
 > シリーズ：[Zonix OS 設計振り返り #11](https://github.com/leafvmaple/blog/issues/11) の詳細記事
 > 対象サブシステム：`mm/vmm.cpp` / `mm/swap.cpp` / `mm/swap_fifo.cpp` / `mm/pmm.cpp`
 
-仮想メモリで最も語る価値があるのは「4 レベルページテーブルをどう辿るか」ではなく —— それは教科書の内容です —— いくつかの**データ構造の再利用**の小技です。
+x86_64 の PTE は 64 ビット。Intel SDM Vol.3A §4.5（"4-Level Paging and 5-Level Paging"）/ Table 4-19 がこの 64 ビットを定めている：bit 0 は present、bit 1 は R/W、bit 2 は U/S、bit 12-51 は物理ページアドレス（4K ページの場合）、bit 52-62 は OS ソフトウェア可用、bit 63 は NX。CPU のハードウェアページテーブルウォーカは `present=1` のときだけこのエントリを認め、`present=0` なら即 page fault を投げ、**残りの 63 ビットを一切見ない**。
 
-1. ページフォルトハンドラは **PTE の present ビット 1 個**だけで、「このページは一度も割り当てられていない」と「このページはスワップアウトされた」というまったく異なる二つの状況を区別する;
-2. スワップアウトされたページの位置（swap スロット番号）は**元の PTE に直接エンコード**され、swap サブシステムは逆引きテーブルを一切持たない;
-3. スワップアウトする victim ページを選ぶとき、手元にあるのはその**物理アドレス**だけだが、変更すべきは PTE（仮想アドレスでインデックス）—— よって**ページテーブルを逆走査**し、PA から VA を逆算する。
+`kernel/mm/swap.cpp` + `swap_fifo.cpp` は合計 273 行で demand paging + FIFO swap を実装するが、すべて PTE の 63 個のソフトウェア可用ビットを使って三つのことを行う：
 
-この三つが繋がれば、demand paging + swap の核心のすべてです。
+1. ページフォルトハンドラは PTE 自体で「このページは一度も割り当てられていない」と「スワップアウトされた」の二状態を区別、追加のビットマップは持たない；
+2. swap サブシステムは `<va, swap_slot>` 逆引きテーブルを維持せず、ディスクスロット番号を**元の PTE に直接エンコード**する；
+3. スワップアウトする victim を選ぶときは物理アドレスしか手元に無いので、ページテーブルを逆走査して仮想アドレスへ戻る（rmap 無し）。
 
 ---
 
-## 1. PTE は「アドレス + 権限」だけではない、タグ付き 64 ビットワードだ
+## 1. PTE をタグ付き union として使う：三状態 + フォルト分岐
 
-x86_64 のページテーブルエントリ（PTE）の下位はフラグの集まりで、最下位の `present`（Zonix では `VM_PRESENT`）がこのエントリが実在する物理ページを指すかを決める。CPU のハードウェアページテーブルウォーカは `present=1` のときだけこのエントリを認め、`present=0` なら即 page fault を投げ、**残りの 63 ビットを一切見ない**。
-
-その 63 ビットがソフトウェアの自由領域。Zonix はそこで PTE を三状態のタグ付き union にしました。
+Zonix は `present=0` のときの 63 ビットの自由度を使って、PTE を三状態のタグ付き union にした（`arch/x86/include/asm/page.h` の `VM_PRESENT = PTE_P = 0x001`、SDM のあの bit 0）：
 
 | PTE の値 | 意味 | フォルト時の処理 |
 |---|---|---|
@@ -45,7 +43,7 @@ int pg_fault(MemoryDesc* mm, uint32_t error_code, uintptr_t addr) {
 }
 ```
 
-このコードの美点は：**「割り当てるべきか、スワップインすべきか」を判断する追加メタデータが一切要らない**こと。判定基準は PTE 自身の値に完全に隠れている。CPU はフォルト時に障害アドレスを CR2 に置き（`arch_fault_addr()` で読む）、ハンドラはそのアドレスで PTE まで辿り、0 か否かを一目見れば分岐が分かる。追加のビットマップも「スワップアウト済みページ」リストの検索も無い。
+このコードは「割り当てるべきか、スワップインすべきか」を判断する追加メタデータを一切必要としない —— 判定基準は PTE 自身の値に完全に隠れている。CPU はフォルト時に障害アドレスを CR2 に置き（SDM Vol.3A §4.7、`arch_fault_addr()` で読む）、ハンドラはそのアドレスで PTE まで辿り、0 か否かを一目見れば分岐が分かる。追加のビットマップも「スワップアウト済みページ」リストの検索も無い。
 
 ---
 
@@ -146,7 +144,7 @@ uintptr_t scan_pt_for_pa(const pde_t* table, int depth, uintptr_t va_base, uintp
 
 深さ優先のページテーブル走査で、各層で `LEVEL_SHIFTS[depth]` を使ってその層の entry インデックスに対応する仮想アドレスビット段を復元し、`va_base | (i << shift)` で完全な VA を組み上げる。大ページ（block entry、2MB または 1GB）に遭遇したら target_pa のブロック内オフセットを VA 下位に補う。
 
-> この O(ページテーブル規模) の逆走査は明らかに本番 OS のやり方ではない —— Linux は `struct page` 上の逆マッピング（rmap）+ anon_vma で PA→VA を行い、まさにスワップアウトのたびの全表走査を避けている。だが Zonix の教育的規模では、**まず最も率直で間違えにくい実装で意味論を通し、最適化はその後**、が割の良い順序です。この逆走査関数は 30 行、追加状態ゼロ、読めば一目瞭然。本当に性能圧力が出てから rmap を入れても遅くない。私はこの取捨選択をコメントに書き、未来の自分に「ここは既知の、許容可能な遅さ」と注意を残しています。
+これは O(ページテーブル規模) の逆走査で、本番 OS のやり方ではない —— Linux は `struct page` 上の逆マッピング（rmap）+ `anon_vma`（[`include/linux/rmap.h`](https://github.com/torvalds/linux/blob/master/include/linux/rmap.h) 参照）で PA→VA を行い、スワップアウトのたびの全表走査を避けている。Zonix の教育的規模では、この逆走査関数は 30 行、追加状態ゼロ、読めば一目瞭然；本当に性能圧力が出てから rmap を入れても遅くない。ソースコメントに「ここは既知の、許容可能な遅さ」と明記されている。
 
 ---
 
@@ -207,10 +205,10 @@ uintptr_t mmio_map(uintptr_t phys_addr, size_t size, uint32_t perm) {
 
 <!-- メモリ管理 / swap の今後の進化はここに、時系列降順で。各項に commit リンク + 一言。 -->
 
-- 2026-04-07：[`c16cf25`](https://github.com/leafvmaple/zonix-plus/commit/c16cf25) アーキ非依存の `arch_flush_tlb_range` を抽出し、VMM / `mmio_map` で統一使用（§5 参照）。x86 は逐ページ `invlpg`、aarch64 は `tlbi` —— VMM はもう気にしない。
-- 2026-02-12：[`5a00a65`](https://github.com/leafvmaple/zonix-plus/commit/5a00a65) MMIO アクセスとページアロケータ抽象を統一；[`2e6847f`](https://github.com/leafvmaple/zonix-plus/commit/2e6847f) `page2pa/pa2page` 等の変換 API をリネーム（→ `pmm::page_to_phys` 等）、ページテーブル割り当てフローを安定化。
-- 2026-02-12：[`27e6267`](https://github.com/leafvmaple/zonix-plus/commit/27e6267) PMM マネージャを C struct から C++ クラスへ書き換え、first-fit アロケータ + 参照カウントをオブジェクトに収める。
+- 2026-04-03：[`c16cf25`](https://github.com/leafvmaple/zonix-plus/commit/c16cf25) アーキ非依存の `arch_flush_tlb_range` を抽出し、VMM / `mmio_map` で統一使用（§5 参照）。x86 は逐ページ `invlpg`、aarch64 は `tlbi` —— VMM はもう気にしない。
+- 2026-03-20：[`5a00a65`](https://github.com/leafvmaple/zonix-plus/commit/5a00a65) MMIO アクセスとページアロケータ抽象を統一；[`2e6847f`](https://github.com/leafvmaple/zonix-plus/commit/2e6847f) `page2pa/pa2page` 等の変換 API をリネーム（→ `pmm::page_to_phys` 等）、ページテーブル割り当てフローを安定化。
+- 2026-01-29：[`27e6267`](https://github.com/leafvmaple/zonix-plus/commit/27e6267) PMM マネージャを C struct から C++ クラスへ書き換え、first-fit アロケータ + 参照カウントをオブジェクトに収める。
 
 ---
 
-*本記事は [Zonix OS 設計振り返り](https://github.com/leafvmaple/blog/issues/11) シリーズの詳細記事です。他の記事は振り返り本編末尾のインデックスから。*
+*リポジトリ：[leafvmaple/zonix-plus](https://github.com/leafvmaple/zonix-plus)。本記事は [Zonix OS シリーズ](https://github.com/leafvmaple/blog/issues/11) の一篇。*

@@ -1,10 +1,20 @@
-# Action システム：「時間」を合成可能な代数にする
+# `update(t∈[0,1])` は複合 Action を代数化する唯一の前提
 
 > リポジトリ：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)
 > シリーズ：[mini-cocos 設計復盤 #2](https://github.com/leafvmaple/blog/issues/2) のサブ記事
 > 関連サブシステム：`Action` / `ActionInterval` / `Sequence` / `Spawn` / `EaseFunction`
 
-mini-cocos の Action システムはほぼ cocos2d-x の設計を直移植したものですが、自分で書いてみて **この設計の本当に賢い点が 1 つの API 形に集約されている** ことに気づきました —— `Sequence` でも `Spawn` でもなく、`update(float t)` 関数の契約：「t は常に [0, 1] の正規化時刻」。この 1 条の制約が、システム全体を N 段ネスト合成可能にする根本要因です。
+mini-cocos の Action システムはほぼ cocos2d-x の設計を直移植したもの。`src/base/ZCAction*.cpp/h` は計 1,082 行で `Sequence` / `Spawn` / `Ease` / `Repeat` / `RepeatForever` と一連の具体 tween（`MoveTo` / `MoveBy` / `RotateTo` / …）を実装し、すべて 1 本の API 契約に立脚する：
+
+```cpp
+// src/base/ZCActionInterval.h
+class ActionInterval : public FiniteTimeAction {
+public:
+    virtual void update(float t) = 0;   // ★ t は常に [0, 1] の正規化時刻
+};
+```
+
+この設計の**本当に賢い点は `Sequence` でも `Spawn` でもなく、`update(float t)` の契約そのもの**：`t` は常に ∈ [0, 1]。この 1 条の制約こそ 1,082 行が純関数的に任意ネスト合成できる根本理由 —— `Ease(action, easeFn)` は `update(easeFn(t))` に退化、`Sequence(A, B)` は `t` がどの段に落ちるかに応じて `A.update(t/k)` または `B.update((t-k)/(1-k))` に退化する。以下、この結論を素朴な書き方から逆算する。
 
 ## 1. 素朴な書き方の問題
 
@@ -292,4 +302,4 @@ Action は `target` と `elapsed` の状態を持ち、再入不可。2 つの N
 
 ---
 
-*本記事は [mini-cocos 設計復盤](https://github.com/leafvmaple/blog/issues/2) シリーズのサブ記事です。*
+*リポジトリ：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)。本記事は [mini-cocos シリーズ](https://github.com/leafvmaple/blog/issues/2) の一篇。*
