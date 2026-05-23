@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { marked } from 'marked'
 import { getIssue } from '../api'
 import type { Issue } from '../api'
 import Comments from '../components/Comments'
 import { useLang, useT, localeOf, pickLocalized, useLabelT } from '../i18n'
+import { parseMarkdown } from '../markdown'
 import 'github-markdown-css/github-markdown.css'
 import './PostDetail.css'
 
@@ -28,7 +28,7 @@ export default function PostDetail() {
   const html = useMemo(() => {
     if (!issue) return ''
     const body = pickLocalized(issue.bodies, lang, issue.body || '')
-    return (marked.parse(body) as string).replace(/^<h1[^>]*>.*?<\/h1>\s*/i, '')
+    return parseMarkdown(body).replace(/^<h1[^>]*>.*?<\/h1>\s*/i, '')
   }, [issue, lang])
 
   if (loading) return <div className="detail-state">{t.loading}</div>

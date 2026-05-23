@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { marked } from 'marked'
 import { getIssueComments } from '../api'
 import type { Comment } from '../api'
 import { useLang, useT, localeOf } from '../i18n'
+import { parseMarkdown } from '../markdown'
 import './Comments.css'
 
 interface Props {
@@ -53,7 +53,7 @@ export default function Comments({ issueNumber, issueUrl, totalComments }: Props
   }, [page, loadPage])
 
   const rendered = useMemo(
-    () => comments.map(c => ({ comment: c, html: marked.parse(c.body || '') as string })),
+    () => comments.map(c => ({ comment: c, html: parseMarkdown(c.body || '') })),
     [comments],
   )
 
