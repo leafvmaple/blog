@@ -4,6 +4,16 @@ Instructions for AI coding assistants working on this repository.
 
 This is **leafvmaple/blog** — a personal technical blog with a GitHub Issues backend (the issues are the post content) and a React/Vite SPA frontend (renders the issues into the public site). The author writes primarily about two long-running projects of his: a freestanding C++ kernel (zonix-plus) and a 2D engine (mini-cocos).
 
+## Cardinal rule: posts/ is the source of truth, not GitHub Issues
+
+Every post edit — body content, title, even a single typo — **starts** in `posts/N-slug.{zh,ja}.md`, then propagates to the GitHub Issue via `scripts/assemble-post.mjs` + `gh issue edit --body-file`. **Never** edit an Issue's body or title directly with `gh issue edit --body ...` / `--title ...` for content changes — the Issue is downstream, and the next sync from `posts/` will silently overwrite anything you change there.
+
+This applies to **title changes too**: the `# H1` in each per-language file is the canonical source of both the rendered H1 and the `<!--title:xx-->` marker. To change a title, edit the H1 in `posts/N-slug.<lang>.md`, then re-assemble and push. Do not chase the title through `gh issue edit --title` or by hand-patching the `<!--title:xx-->` marker in the issue body.
+
+The detailed step-by-step is in [Workflow: drafting + publishing a post](#workflow-drafting--publishing-a-post) below.
+
+**Acceptable direct `gh issue edit` uses** (these don't touch content): label changes (`--add-label` / `--remove-label`), and the initial `gh issue create` that reserves an issue number for a new post (followed immediately by the assemble + `--body-file` edit).
+
 ## Author / context
 
 - Bilingual zh + ja blog. Every post has both languages.
