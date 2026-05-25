@@ -52,10 +52,19 @@ async function main() {
     ...[...found.keys()].filter(l => !LANG_ORDER.includes(l)).sort(),
   ]
 
+  const PUB_RE = /<!--\s*pub:(\d{4}-\d{2}-\d{2})\s*-->/i
+  const PUB_STRIP_RE = /<!--\s*pub:\d{4}-\d{2}-\d{2}\s*-->\s*\n?/g
+
+  let pub = null
   const parts = []
   const titleBlocks = []
   for (const lang of ordered) {
-    const raw = (await readFile(resolve(POSTS_DIR, found.get(lang)), 'utf8')).trim()
+    let raw = (await readFile(resolve(POSTS_DIR, found.get(lang)), 'utf8')).trim()
+    // <!--pub:YYYY-MM-DD--> may appear at the top of any lang file; first one
+    // we find wins. Strip from each lang body so it doesn't pollute rendering.
+    const pubM = raw.match(PUB_RE)
+    if (pubM && !pub) pub = pubM[1]
+    raw = raw.replace(PUB_STRIP_RE, '').trim()
     const m = raw.match(/^#\s+(.+?)\s*$/m)
     if (!m) {
       console.error(`[assemble-post] ${found.get(lang)} missing top-level "# Title" line`)
@@ -64,7 +73,10 @@ async function main() {
     titleBlocks.push(`<!--title:${lang}-->${m[1].trim()}<!--/title:${lang}-->`)
     parts.push(`<!--lang:${lang}-->\n${raw}\n<!--/lang:${lang}-->`)
   }
-  const out = titleBlocks.join('\n') + '\n\n' + parts.join('\n\n') + '\n'
+  const headerLines = []
+  if (pub) headerLines.push(`<!--pub:${pub}-->`)
+  headerLines.push(...titleBlocks)
+  const out = headerLines.join('\n') + '\n\n' + parts.join('\n\n') + '\n'
   const outFile = process.argv[3]
   if (outFile) {
     await writeFile(resolve(process.cwd(), outFile), out, 'utf8')

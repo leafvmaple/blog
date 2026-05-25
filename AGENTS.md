@@ -126,6 +126,10 @@ Source of truth is [posts/README.md](posts/README.md). Summary:
 
 `scripts/assemble-post.mjs` extracts each file's H1 as the localized title and the body as the localized content, in zh + ja order. The Issue title itself is the **English canonical** (used for URL slug, GitHub UI, fallback when a locale is missing). Don't translate it into Chinese or Japanese.
 
+### Publish date
+
+GitHub's `issue.created_at` is immutable, so the displayed publish date comes from a `<!--pub:YYYY-MM-DD-->` marker at the top of `posts/N-slug.zh.md` (assemble-post lifts it to the issue body header; fetch-posts overrides `created_at` with `YYYY-MM-DDT00:00:00Z` in the snapshot). Floor: must be **>= the first commit of the post's source project** (mini-cocos / zonix-plus / zcc — `git -C <repo> log --reverse --format=%ad --date=short | head -1`). Refactor / rewrite commits in the iteration log do **not** push the floor forward — the post's creation time tracks when the author started writing it, not the latest cited commit. Series-anchor / recap posts (#2, #11) sit at the **start** of their series; sub-posts spread forward as the work happens. See [posts/README.md#发布日期-override](posts/README.md).
+
 ## Label inventory
 
 Run `gh label list --repo leafvmaple/blog` to refresh. Existing labels: `os-kernel`, `C++`, `data-structure`, `game-engine`, `cocos2d-x`, `OpenGL`, `Vulkan`, `rendering`, `lua`, `recap`, `memory-management`, `scheduler`, `concurrency`, `boot`, `multi-arch`, `toolchain`, `syscall`, `elf`, `user-mode`, `pinned`.

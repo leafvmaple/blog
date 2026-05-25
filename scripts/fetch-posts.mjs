@@ -101,13 +101,28 @@ function stripTitleMarkers(body) {
   return (body || '').replace(/<!--\s*title:[a-zA-Z-]+\s*-->[\s\S]*?<!--\s*\/title:[a-zA-Z-]+\s*-->\s*/g, '')
 }
 
+// `<!--pub:YYYY-MM-DD-->` in the issue body overrides the GitHub Issue's
+// created_at, since GH's API treats creation time as immutable but the author
+// wants the displayed publish date to reflect actual writing cadence rather
+// than the day all issues happened to be filled in. Source-of-truth lives in
+// posts/N-slug.<lang>.md (assemble-post.mjs lifts it to the body).
+function extractPub(body) {
+  const m = (body || '').match(/<!--\s*pub:(\d{4}-\d{2}-\d{2})\s*-->/i)
+  return m ? m[1] : null
+}
+
+function stripPubMarker(body) {
+  return (body || '').replace(/<!--\s*pub:\d{4}-\d{2}-\d{2}\s*-->\s*\n?/g, '')
+}
+
 function pickIssue(i) {
   const bodyTitles = splitBodyTitles(i.body)
   const legacyTitles = splitTitle(i.title)
   // Body markers win; legacy `||` titles fill any gaps; raw Issue title is the
   // canonical fallback when a locale has no localized title at all.
   const titles = { ...legacyTitles, ...bodyTitles }
-  const cleanBody = stripTitleMarkers(i.body)
+  const pub = extractPub(i.body)
+  const cleanBody = stripPubMarker(stripTitleMarkers(i.body))
   return {
     id: i.id,
     number: i.number,
@@ -116,7 +131,7 @@ function pickIssue(i) {
     body: cleanBody,
     bodies: splitLangs(cleanBody),
     html_url: i.html_url,
-    created_at: i.created_at,
+    created_at: pub ? `${pub}T00:00:00Z` : i.created_at,
     comments: i.comments,
     user: {
       login: i.user.login,
