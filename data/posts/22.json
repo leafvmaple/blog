@@ -21,20 +21,8 @@
     },
     "labels": [
       {
-        "name": "C++",
-        "color": "00599c"
-      },
-      {
-        "name": "toolchain",
-        "color": "57534e"
-      },
-      {
         "name": "compiler",
         "color": "7e22ce"
-      },
-      {
-        "name": "llvm",
-        "color": "262261"
       }
     ]
   },

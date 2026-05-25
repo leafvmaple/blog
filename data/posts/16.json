@@ -21,16 +21,8 @@
     },
     "labels": [
       {
-        "name": "C++",
-        "color": "00599c"
-      },
-      {
         "name": "os-kernel",
         "color": "0e7490"
-      },
-      {
-        "name": "concurrency",
-        "color": "be123c"
       }
     ]
   },

@@ -21,28 +21,8 @@
     },
     "labels": [
       {
-        "name": "C++",
-        "color": "00599c"
-      },
-      {
         "name": "game-engine",
         "color": "7c3aed"
-      },
-      {
-        "name": "OpenGL",
-        "color": "5586a4"
-      },
-      {
-        "name": "Vulkan",
-        "color": "ac162c"
-      },
-      {
-        "name": "rendering",
-        "color": "ea580c"
-      },
-      {
-        "name": "recap",
-        "color": "475569"
       }
     ]
   },

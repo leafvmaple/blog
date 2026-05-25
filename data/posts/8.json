@@ -21,20 +21,8 @@
     },
     "labels": [
       {
-        "name": "C++",
-        "color": "00599c"
-      },
-      {
         "name": "game-engine",
         "color": "7c3aed"
-      },
-      {
-        "name": "cocos2d-x",
-        "color": "f59e0b"
-      },
-      {
-        "name": "recap",
-        "color": "475569"
       }
     ]
   },
