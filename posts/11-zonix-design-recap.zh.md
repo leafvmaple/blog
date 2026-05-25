@@ -1,4 +1,4 @@
-<!--pub:2026-02-02-->
+<!--pub:2024-04-01-->
 # Zonix：从零开始的多 ISA 操作系统内核
 
 > 仓库：[leafvmaple/zonix-plus](https://github.com/leafvmaple/zonix-plus)

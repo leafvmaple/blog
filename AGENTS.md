@@ -128,7 +128,13 @@ Source of truth is [posts/README.md](posts/README.md). Summary:
 
 ### Publish date
 
-GitHub's `issue.created_at` is immutable, so the displayed publish date comes from a `<!--pub:YYYY-MM-DD-->` marker at the top of `posts/N-slug.zh.md` (assemble-post lifts it to the issue body header; fetch-posts overrides `created_at` with `YYYY-MM-DDT00:00:00Z` in the snapshot). Floor: must be **>= the first commit of the post's source project** (mini-cocos / zonix-plus / zcc — `git -C <repo> log --reverse --format=%ad --date=short | head -1`). Refactor / rewrite commits in the iteration log do **not** push the floor forward — the post's creation time tracks when the author started writing it, not the latest cited commit. Series-anchor / recap posts (#2, #11) sit at the **start** of their series; sub-posts spread forward as the work happens. See [posts/README.md#发布日期-override](posts/README.md).
+GitHub's `issue.created_at` is immutable, so the displayed publish date comes from a `<!--pub:YYYY-MM-DD-->` marker at the top of `posts/N-slug.zh.md` (assemble-post lifts it to the issue body header; fetch-posts overrides `created_at` with `YYYY-MM-DDT00:00:00Z` in the snapshot). Floor: must be **>= the first commit of the post's source project**, counting predecessor repos when the current repo is a continuation/fork. Effective floors for the three current series:
+
+- **mini-cocos**: 2026-03-25 (`D:/Code/mini-cocos`).
+- **zonix**: **2024-03-06** (`D:/Code/zonix` — the original repo that `zonix-plus` was forked off in early 2026; do **not** use `zonix-plus`'s 2026-01-28 first commit as the floor).
+- **zcc**: 2024-07-03 (`D:/Code/zcc`).
+
+Refactor / rewrite commits in the iteration log do **not** push the floor forward — the post's creation time tracks when the author started writing it, not the latest cited commit. Series-anchor / recap posts (#2, #11) sit at the **start** of their series; sub-posts spread forward as the work happens. See [posts/README.md#发布日期-override](posts/README.md).
 
 ## Label inventory
 

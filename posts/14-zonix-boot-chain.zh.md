@@ -1,4 +1,4 @@
-<!--pub:2026-02-10-->
+<!--pub:2024-05-15-->
 # BIOS 与 UEFI 在 `head.S` 汇合：`rdi=&BootInfo`
 
 > 仓库：[leafvmaple/zonix-plus](https://github.com/leafvmaple/zonix-plus)

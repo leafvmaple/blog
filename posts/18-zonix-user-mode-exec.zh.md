@@ -1,4 +1,4 @@
-<!--pub:2026-04-15-->
+<!--pub:2025-11-15-->
 # `iretq` 顺手把进程降到 ring 3：复用 fork 的 trapret 加载不可信 ELF
 
 > 仓库：[leafvmaple/zonix-plus](https://github.com/leafvmaple/zonix-plus)
