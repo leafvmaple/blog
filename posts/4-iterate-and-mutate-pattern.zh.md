@@ -1,3 +1,4 @@
+<!--pub:2026-04-10-->
 # 迭代中 erase 自己：iterator 失效的 bug 一周才显形一次
 
 > 仓库：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)

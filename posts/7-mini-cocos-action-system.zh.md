@@ -1,3 +1,4 @@
+<!--pub:2026-04-30-->
 # `update(t∈[0,1])` 是复合 Action 代数化的唯一前提
 
 > 仓库：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)

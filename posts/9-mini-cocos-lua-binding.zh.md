@@ -1,3 +1,4 @@
+<!--pub:2026-05-12-->
 # Lua / C++ 边界的所有权不对称：sol2 的默认行为正好相反
 
 > 仓库：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)

@@ -1,3 +1,4 @@
+<!--pub:2026-05-20-->
 # 一份别名头：mini-cocos 在 hosted 与 freestanding 之间切换的总开关
 
 > 仓库：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)

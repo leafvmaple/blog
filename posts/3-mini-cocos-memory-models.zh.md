@@ -1,3 +1,4 @@
+<!--pub:2026-04-05-->
 # `shared_ptr` 没有的语义：autorelease 的"这一帧死"
 
 > 仓库：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)

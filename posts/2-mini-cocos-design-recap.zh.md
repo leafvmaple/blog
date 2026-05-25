@@ -1,3 +1,4 @@
+<!--pub:2026-03-28-->
 # mini-cocos：cocos2d-x 的从零重写与设计复盘
 
 > 仓库：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)

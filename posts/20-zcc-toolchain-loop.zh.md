@@ -1,3 +1,4 @@
+<!--pub:2026-03-18-->
 # zcc 编出的 ELF 直接跑在 Zonix 上：自研工具链与 OS 的闭环
 
 > 仓库：[leafvmaple/zcc](https://github.com/leafvmaple/zcc)

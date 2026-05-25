@@ -1,3 +1,4 @@
+<!--pub:2026-01-10-->
 # 从 SysY 到 C0：在一份教学文法上长出能编 `printf("Hello\n")` 的最小前端
 
 > 仓库：[leafvmaple/zcc](https://github.com/leafvmaple/zcc)

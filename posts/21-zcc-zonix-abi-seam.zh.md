@@ -1,3 +1,4 @@
+<!--pub:2026-03-05-->
 # 一份 `syscall.h`、两份物理拷贝、三方消费者：zcc 和 Zonix 之间的 ABI 接缝
 
 > 仓库：[leafvmaple/zcc](https://github.com/leafvmaple/zcc) + [leafvmaple/zonix-plus](https://github.com/leafvmaple/zonix-plus)

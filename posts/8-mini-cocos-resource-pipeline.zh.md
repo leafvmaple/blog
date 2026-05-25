@@ -1,3 +1,4 @@
+<!--pub:2026-05-06-->
 # CJK Label 卡死加载界面的不是字符多，是每个字一张纹理
 
 > 仓库：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)

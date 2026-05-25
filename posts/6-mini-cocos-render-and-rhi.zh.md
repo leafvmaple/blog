@@ -1,3 +1,4 @@
+<!--pub:2026-04-22-->
 # 一个 64 位整数排完整帧 draw call
 
 > 仓库：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)

@@ -1,3 +1,4 @@
+<!--pub:2026-02-20-->
 # 第二个架构会引爆 `kernel/` 里每一条裸 `inb`
 
 > 仓库：[leafvmaple/zonix-plus](https://github.com/leafvmaple/zonix-plus)

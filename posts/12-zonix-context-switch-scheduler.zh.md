@@ -1,3 +1,4 @@
+<!--pub:2026-03-22-->
 # `leave;ret` 掩盖了六周的 RSP off-by-8，换 Clang 当场 triple fault
 
 > 仓库：[leafvmaple/zonix-plus](https://github.com/leafvmaple/zonix-plus)

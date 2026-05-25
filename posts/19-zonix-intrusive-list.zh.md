@@ -1,3 +1,4 @@
+<!--pub:2026-04-28-->
 # 侵入式链表：内核里链表节点几乎从不单独 malloc
 
 > 仓库：[leafvmaple/zonix-plus](https://github.com/leafvmaple/zonix-plus)

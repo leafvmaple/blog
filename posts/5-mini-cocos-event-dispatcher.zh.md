@@ -1,3 +1,4 @@
+<!--pub:2026-04-18-->
 # EventDispatcher 三次重写：双优先级链 + pending queue + 嵌套 dispatch 计数器
 
 > 仓库：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)

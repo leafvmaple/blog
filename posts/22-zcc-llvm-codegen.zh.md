@@ -1,3 +1,4 @@
+<!--pub:2026-02-15-->
 # 删掉一个 IR 后端那天净减 1,414 行：zcc 的 LLVM codegen 是怎么瘦成薄壳的
 
 > 仓库：[leafvmaple/zcc](https://github.com/leafvmaple/zcc)
