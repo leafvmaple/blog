@@ -1,4 +1,4 @@
-<!--pub:2024-07-01-->
+<!--pub:2026-04-12-->
 # freestanding 不等于退回 C：内核里照样跑 RAII 和 `Result<T>`
 
 > 仓库：[leafvmaple/zonix-plus](https://github.com/leafvmaple/zonix-plus)

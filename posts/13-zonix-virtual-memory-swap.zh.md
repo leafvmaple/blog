@@ -1,4 +1,4 @@
-<!--pub:2025-02-10-->
+<!--pub:2025-10-25-->
 # PTE 高 56 位是免费的 swap 表
 
 > 仓库：[leafvmaple/zonix-plus](https://github.com/leafvmaple/zonix-plus)

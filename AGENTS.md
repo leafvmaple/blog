@@ -134,7 +134,11 @@ GitHub's `issue.created_at` is immutable, so the displayed publish date comes fr
 - **zonix**: **2024-03-06** (`D:/Code/zonix` — the original repo that `zonix-plus` was forked off in early 2026; do **not** use `zonix-plus`'s 2026-01-28 first commit as the floor).
 - **zcc**: 2024-07-03 (`D:/Code/zcc`).
 
-Refactor / rewrite commits in the iteration log do **not** push the floor forward — the post's creation time tracks when the author started writing it, not the latest cited commit. Series-anchor / recap posts (#2, #11) sit at the **start** of their series; sub-posts spread forward as the work happens. See [posts/README.md#发布日期-override](posts/README.md).
+Refactor / rewrite commits in the iteration log do **not** push the floor forward — the post's creation time tracks when the author started writing it, not the latest cited commit.
+
+**But**: if a post's title or body is **structurally about a specific feature, event, or commit** (e.g. `#12` "leave;ret + GCC vs Clang triple fault" is literally a story about the GCC→Clang switch; `#17` "RAII 和 `Result<T>`" is built around the `Result<T>` introduction), then the floor must be **>= the first commit that introduces that feature/event**. The post cannot exist before its subject does. Use `git log -G '<feature-symbol>' --reverse` or `git log --grep='<keyword>' --reverse` against the source repo to find that commit. When in doubt, read the post's first one or two paragraphs and ask "what specific landed change is this story about?" — that change's date is the floor.
+
+Series-anchor / recap posts (#2, #11) sit at the **start** of their series; sub-posts spread forward as the work happens. See [posts/README.md#发布日期-override](posts/README.md).
 
 ## Label inventory
 

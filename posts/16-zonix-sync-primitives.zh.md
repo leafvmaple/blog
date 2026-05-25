@@ -1,4 +1,4 @@
-<!--pub:2024-09-01-->
+<!--pub:2026-03-22-->
 # spinlock 在单核上互斥的不是 CPU，是中断处理程序
 
 > 仓库：[leafvmaple/zonix-plus](https://github.com/leafvmaple/zonix-plus)
