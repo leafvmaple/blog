@@ -56,8 +56,17 @@ const detailCache = new Map<number, Promise<PostDetail>>()
 // list, in the same relative order they had among themselves.
 const PIN_LABEL = 'pinned'
 
+// Functional-only labels: read by code (e.g. `pinned` controls home-page
+// sort) but not shown as a badge on post cards or in post detail meta.
+// Compared case-insensitively.
+const HIDDEN_LABELS = new Set<string>([PIN_LABEL])
+
 export function isPinned(issue: Issue): boolean {
   return issue.labels.some(l => l.name.toLowerCase() === PIN_LABEL)
+}
+
+export function isHiddenLabel(name: string): boolean {
+  return HIDDEN_LABELS.has(name.toLowerCase())
 }
 
 function loadAllPosts(): Promise<Issue[]> {

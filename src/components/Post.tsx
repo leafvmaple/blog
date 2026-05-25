@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import type { Issue } from '../api'
+import { isHiddenLabel, type Issue } from '../api'
 import { useLang, localeOf, pickLocalized, useLabelT } from '../i18n'
 import './Post.css'
 
@@ -11,14 +11,15 @@ export default function Post({ issue }: PostProps) {
   const { lang } = useLang()
   const labelT = useLabelT()
   const title = pickLocalized(issue.titles, lang, issue.title)
+  const visibleLabels = issue.labels.filter(l => !isHiddenLabel(l.name))
   return (
     <Link className="post-link" to={`/post/${issue.number}`}>
       <article className="post-card">
         <div className="post-row1">
           <h2 className="post-title">{title}</h2>
-          {issue.labels.length > 0 && (
+          {visibleLabels.length > 0 && (
             <div className="post-labels">
-              {issue.labels.map(label => (
+              {visibleLabels.map(label => (
                 <span
                   key={label.name}
                   className="post-label"

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { getIssue } from '../api'
+import { getIssue, isHiddenLabel } from '../api'
 import type { Issue } from '../api'
 import Comments from '../components/Comments'
 import { useLang, useT, localeOf, pickLocalized, useLabelT } from '../i18n'
@@ -40,6 +40,7 @@ export default function PostDetail() {
   )
 
   const title = pickLocalized(issue.titles, lang, issue.title)
+  const visibleLabels = issue.labels.filter(l => !isHiddenLabel(l.name))
 
   return (
     <div className="post-detail">
@@ -50,7 +51,7 @@ export default function PostDetail() {
         <h1 className="detail-title">{title}</h1>
         <div className="detail-meta">
           <time>{new Date(issue.created_at).toLocaleDateString(localeOf(lang))}</time>
-          {issue.labels.map(label => (
+          {visibleLabels.map(label => (
             <span
               key={label.name}
               className="post-label"
