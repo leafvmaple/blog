@@ -1,4 +1,4 @@
-# 重写 cocos2d-x：哪些 2010 年的抽象活到了 Vulkan
+# mini-cocos：cocos2d-x 的从零重写与设计复盘
 
 > 仓库：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)
 > 提交跨度：2026-03-25 → 2026-05-22，41 次提交

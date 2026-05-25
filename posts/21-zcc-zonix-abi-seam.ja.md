@@ -1,4 +1,4 @@
-# 6 行の `syscall.h`、二つの物理コピー、三人の消費者：zcc と Zonix の ABI 継ぎ目
+# `syscall.h` 1 枚、二つの物理コピー、三人の消費者：zcc と Zonix の ABI 継ぎ目
 
 > リポジトリ：[leafvmaple/zcc](https://github.com/leafvmaple/zcc) + [leafvmaple/zonix-plus](https://github.com/leafvmaple/zonix-plus)
 > シリーズ：[zcc メインインデックス #20](https://github.com/leafvmaple/blog/issues/20) の継ぎ目深掘り

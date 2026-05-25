@@ -1,4 +1,4 @@
-# 3 つの ISA、1 つの `kernel/`：24,000 行 freestanding C++ の Zonix
+# Zonix：ゼロから作るマルチ ISA OS カーネル
 
 > リポジトリ：[leafvmaple/zonix-plus](https://github.com/leafvmaple/zonix-plus)
 > コミット期間：2026-01-28 → 2026-05-22、91 コミット、現在 v0.11.x "Genesis"

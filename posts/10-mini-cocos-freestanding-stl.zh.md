@@ -1,4 +1,4 @@
-# 50 行别名头：mini-cocos 在 hosted 与 freestanding 之间切换的总开关
+# 一份别名头：mini-cocos 在 hosted 与 freestanding 之间切换的总开关
 
 > 仓库：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)
 > 系列：[mini-cocos 设计复盘 #2](https://github.com/leafvmaple/blog/issues/2) 的子篇

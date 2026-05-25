@@ -1,4 +1,4 @@
-# 三套 ISA、一份 `kernel/`：24,000 行 freestanding C++ 的 Zonix
+# Zonix：从零开始的多 ISA 操作系统内核
 
 > 仓库：[leafvmaple/zonix-plus](https://github.com/leafvmaple/zonix-plus)
 > 提交跨度：2026-01-28 → 2026-05-22，91 次提交，当前 v0.11.x "Genesis"

@@ -1,4 +1,4 @@
-# 50 行のエイリアスヘッダ：mini-cocos を hosted と freestanding の間で切り替える総スイッチ
+# 1 枚のエイリアスヘッダ：mini-cocos を hosted と freestanding の間で切り替える総スイッチ
 
 > リポジトリ：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)
 > シリーズ：[mini-cocos 設計復盤 #2](https://github.com/leafvmaple/blog/issues/2) のサブ記事

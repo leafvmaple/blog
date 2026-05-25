@@ -1,4 +1,4 @@
-# cocos2d-x を書き直す：2010 年の抽象は Vulkan まで生き延びたか
+# mini-cocos：cocos2d-x をゼロから書き直す ― 設計振り返り
 
 > リポジトリ：[leafvmaple/mini-cocos](https://github.com/leafvmaple/mini-cocos)
 > コミット期間：2026-03-25 → 2026-05-22、41 コミット

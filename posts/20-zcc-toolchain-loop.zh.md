@@ -1,4 +1,4 @@
-# 3,100 行 C 编译器 + 一份共享 `syscall.h`：让 zcc 编出来的 ELF 直接跑在 Zonix 上
+# zcc 编出的 ELF 直接跑在 Zonix 上：自研工具链与 OS 的闭环
 
 > 仓库：[leafvmaple/zcc](https://github.com/leafvmaple/zcc)
 > 提交跨度：2024-07-03 → 2026-05-22，116 次提交，跨两个集中开发期（2025-08 主体实现 / 2026-03–05 与 Zonix 闭环）

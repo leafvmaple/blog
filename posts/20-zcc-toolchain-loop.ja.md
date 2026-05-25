@@ -1,4 +1,4 @@
-# 3,100 行の C コンパイラ + 共有された `syscall.h` 1 枚：zcc が吐く ELF を Zonix で直接走らせる
+# zcc が吐く ELF を Zonix で直接走らせる：自作ツールチェーンと OS の閉環
 
 > リポジトリ：[leafvmaple/zcc](https://github.com/leafvmaple/zcc)
 > コミット期間：2024-07-03 → 2026-05-22、116 コミット、二つの集中開発期にまたがる（2025-08 の本体実装 / 2026-03–05 の Zonix との閉環）
