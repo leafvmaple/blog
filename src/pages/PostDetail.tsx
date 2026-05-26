@@ -51,13 +51,14 @@ export default function PostDetail() {
         <div className="detail-meta">
           <time>{new Date(issue.created_at).toLocaleDateString(localeOf(lang))}</time>
           {visibleLabels.map(label => (
-            <span
+            <Link
               key={label.name}
+              to={`/label/${encodeURIComponent(label.name)}`}
               className="post-label"
               style={{ background: `#${label.color}20`, color: `#${label.color}`, borderColor: `#${label.color}40` }}
             >
               {labelT(label.name)}
-            </span>
+            </Link>
           ))}
           <a
             href={issue.html_url}

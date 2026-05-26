@@ -107,14 +107,18 @@
   background: transparent !important;
 }
 
-/* post-label reused from Post.css */
+/* post-label reused from Post.css; here they're <Link>s to /label/:name */
 .post-label {
   padding: 1px 8px;
   border-radius: 20px;
   font-size: 12px;
   border: 1px solid;
   font-weight: 500;
+  text-decoration: none;
+  transition: filter 0.15s;
 }
+
+.post-label:hover { filter: brightness(1.15); }
 
 @media (max-width: 768px) {
   .post-detail { padding: 24px 0 60px; }
