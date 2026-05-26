@@ -6,7 +6,7 @@
     <atom:link href="https://leafvmaple.com/rss.xml" rel="self" type="application/rss+xml"/>
     <description>资深游戏开发者 / AI Native 工程师，记录游戏引擎、渲染、操作系统内核与现代 C++ 的技术实践。</description>
     <language>zh-CN</language>
-    <lastBuildDate>Tue, 26 May 2026 09:18:54 GMT</lastBuildDate>
+    <lastBuildDate>Tue, 26 May 2026 09:25:39 GMT</lastBuildDate>
     <item>
       <title>一份别名头：mini-cocos 在 hosted 与 freestanding 之间切换的总开关</title>
       <link>https://leafvmaple.com/post/10</link>
