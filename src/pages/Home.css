@@ -91,15 +91,32 @@
 }
 
 .home-end {
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
   padding: 28px 0 0;
   font-size: 12px;
   color: #ccc;
   letter-spacing: 0.05em;
 }
 
+.home-end-sentinel { color: inherit; }
+
+.home-archive-link {
+  font-size: 13px;
+  color: #888;
+  text-decoration: none;
+  letter-spacing: 0;
+  transition: color 0.15s;
+}
+
+.home-archive-link:hover { color: #0071e3; }
+
 @media (prefers-color-scheme: dark) {
   .home-end { color: #444; }
+  .home-archive-link { color: #777; }
+  .home-archive-link:hover { color: #4da3ff; }
 }
 
 .post-year-divider {

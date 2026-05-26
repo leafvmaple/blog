@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import { getIssues, isPinned, type Issue } from '../api'
 import Post from '../components/Post'
 import { useT } from '../i18n'
@@ -96,7 +97,12 @@ export default function Home() {
         })}
       </div>
       {loading && <div className="home-loading">{t.loading}</div>}
-      {!hasMore && issues.length > 0 && <div className="home-end">{t.all_posts_loaded}</div>}
+      {!hasMore && issues.length > 0 && (
+        <div className="home-end">
+          <span className="home-end-sentinel">{t.all_posts_loaded}</span>
+          <Link to="/archive" className="home-archive-link">{t.archive_link}</Link>
+        </div>
+      )}
       <div ref={sentinelRef} />
     </div>
   )
