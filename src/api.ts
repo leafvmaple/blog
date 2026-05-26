@@ -121,6 +121,13 @@ export async function getIssues(page = 1, perPage = 20): Promise<Issue[]> {
   return all.slice(start, start + perPage)
 }
 
+// Full snapshot. Used by /archive, /label/:name and /series/:slug — small
+// enough (one JSON, ~tens of KB) that pagination isn't worth it for views
+// that want to scan everything.
+export async function getAllIssues(): Promise<Issue[]> {
+  return loadAllPosts()
+}
+
 export async function getIssue(number: number): Promise<Issue> {
   const detail = await loadDetail(number)
   return detail.issue
