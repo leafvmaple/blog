@@ -187,13 +187,28 @@
   text-transform: uppercase;
 }
 
+/* #N and title share one row, separated by a small gap. The title flexes to
+   fill remaining space and ellipsizes when it overflows; the num stays its
+   intrinsic width on the left. max-width:100% so the headline can't push
+   past the card edges. */
+.post-sibling-headline {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  max-width: 100%;
+  min-width: 0;
+}
+
 .post-sibling-num {
+  flex: 0 0 auto;
   font-size: 12px;
   color: #aaa;
   font-variant-numeric: tabular-nums;
 }
 
 .post-sibling-title {
+  flex: 1 1 auto;
+  min-width: 0;
   font-size: 14px;
   font-weight: 600;
   line-height: 1.4;
@@ -201,7 +216,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 100%;
 }
 
 .post-sibling-placeholder {

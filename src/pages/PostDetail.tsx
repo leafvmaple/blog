@@ -106,23 +106,27 @@ export default function PostDetail() {
             {siblings.prev !== undefined ? (
               <Link to={`/post/${siblings.prev}`} className="post-sibling post-sibling-prev">
                 <span className="post-sibling-dir">← {t.series_prev}</span>
-                <span className="post-sibling-num">#{siblings.prev}</span>
-                {prevIssue && (
-                  <span className="post-sibling-title">
-                    {pickLocalized(prevIssue.titles, lang, prevIssue.title)}
-                  </span>
-                )}
+                <span className="post-sibling-headline">
+                  <span className="post-sibling-num">#{siblings.prev}</span>
+                  {prevIssue && (
+                    <span className="post-sibling-title">
+                      {pickLocalized(prevIssue.titles, lang, prevIssue.title)}
+                    </span>
+                  )}
+                </span>
               </Link>
             ) : <span className="post-sibling-placeholder" />}
             {siblings.next !== undefined ? (
               <Link to={`/post/${siblings.next}`} className="post-sibling post-sibling-next">
                 <span className="post-sibling-dir">{t.series_next} →</span>
-                <span className="post-sibling-num">#{siblings.next}</span>
-                {nextIssue && (
-                  <span className="post-sibling-title">
-                    {pickLocalized(nextIssue.titles, lang, nextIssue.title)}
-                  </span>
-                )}
+                <span className="post-sibling-headline">
+                  <span className="post-sibling-num">#{siblings.next}</span>
+                  {nextIssue && (
+                    <span className="post-sibling-title">
+                      {pickLocalized(nextIssue.titles, lang, nextIssue.title)}
+                    </span>
+                  )}
+                </span>
               </Link>
             ) : <span className="post-sibling-placeholder" />}
           </div>
