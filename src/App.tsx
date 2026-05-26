@@ -8,6 +8,7 @@ const About = lazy(() => import('./pages/About'))
 const PostDetail = lazy(() => import('./pages/PostDetail'))
 const Archive = lazy(() => import('./pages/Archive'))
 const Label = lazy(() => import('./pages/Label'))
+const Series = lazy(() => import('./pages/Series'))
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
         <Route path="/post/:number" element={<PostDetail />} />
         <Route path="/archive" element={<Archive />} />
         <Route path="/label/:name" element={<Label />} />
+        <Route path="/series/:slug" element={<Series />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>
