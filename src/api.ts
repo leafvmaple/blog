@@ -53,6 +53,13 @@ interface PostDetail {
 }
 
 let postsPromise: Promise<Issue[]> | null = null
+
+// Tiny LRU on per-post detail responses. Map keeps insertion order, so
+// touching a key = delete + re-set (moves to end), and eviction = drop the
+// oldest key when over cap. The cap is small because real readers only ever
+// view a handful of posts per session; the bound is to keep crawlers /
+// long-lived tabs from growing memory unboundedly.
+const DETAIL_CACHE_MAX = 10
 const detailCache = new Map<number, Promise<PostDetail>>()
 
 // Issues carrying this label (case-insensitive) float to the top of the home
@@ -89,13 +96,21 @@ function loadAllPosts(): Promise<Issue[]> {
 }
 
 function loadDetail(number: number): Promise<PostDetail> {
-  let p = detailCache.get(number)
-  if (!p) {
-    p = fetch(`${DATA_BASE}/posts/${number}.json`, { cache: 'no-cache' }).then(res => {
-      if (!res.ok) throw new Error(`Failed to fetch post ${number}: ${res.status}`)
-      return res.json() as Promise<PostDetail>
-    })
-    detailCache.set(number, p)
+  const hit = detailCache.get(number)
+  if (hit) {
+    // Touch: re-insert to mark as most-recently used.
+    detailCache.delete(number)
+    detailCache.set(number, hit)
+    return hit
+  }
+  const p = fetch(`${DATA_BASE}/posts/${number}.json`, { cache: 'no-cache' }).then(res => {
+    if (!res.ok) throw new Error(`Failed to fetch post ${number}: ${res.status}`)
+    return res.json() as Promise<PostDetail>
+  })
+  detailCache.set(number, p)
+  if (detailCache.size > DETAIL_CACHE_MAX) {
+    const oldest = detailCache.keys().next().value
+    if (oldest !== undefined) detailCache.delete(oldest)
   }
   return p
 }
