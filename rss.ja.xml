@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Zohar Lee 事件簿</title>
+    <link>https://leafvmaple.com/</link>
+    <atom:link href="https://leafvmaple.com/rss.ja.xml" rel="self" type="application/rss+xml"/>
+    <description>シニアゲーム開発者 / AI Native エンジニア。ゲームエンジン、レンダリング、OS カーネル、モダン C++ の技術実践の記録。</description>
+    <language>ja</language>
+    <lastBuildDate>Tue, 26 May 2026 09:10:32 GMT</lastBuildDate>
+    <item>
+      <title>1 枚のエイリアスヘッダ：mini-cocos を hosted と freestanding の間で切り替える総スイッチ</title>
+      <link>https://leafvmaple.com/post/10</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/10</guid>
+      <pubDate>Wed, 20 May 2026 00:00:00 GMT</pubDate>
+      <description>リポジトリ：leafvmaple/mini-cocos シリーズ：mini-cocos 設計復盤 2 のサブ記事 関連サブシステム： / サブモジュール / エンジン全 STL 呼出点 mini-cocos の現在の STL 収束状況（grep 実測）： この縫い目は mini-cocos 自身より長線の目標から来る —— 自作 OS の UI フレームワークとして組み込む 。OS には…</description>
+    </item>
+    <item>
+      <title>Lua / C++ 境界の所有権は非対称：sol2 のデフォルト挙動は逆方向</title>
+      <link>https://leafvmaple.com/post/9</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/9</guid>
+      <pubDate>Tue, 12 May 2026 00:00:00 GMT</pubDate>
+      <description>リポジトリ：leafvmaple/mini-cocos シリーズ：mini-cocos 設計復盤 2 のサブ記事 関連サブシステム： / / / ライフタイム 主流アプローチは sol2 を直接使うこと —— 3 行のテンプレートで C++ クラスを Lua にバインドできる。mini-cocos は使わなかった。代償： 1,529 行の手書き metatable —— sol2 の同等機能は約…</description>
+    </item>
+    <item>
+      <title>CJK Label がロード画面を固める真因は文字数ではなく、文字ごとに 1 枚のテクスチャ</title>
+      <link>https://leafvmaple.com/post/8</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/8</guid>
+      <pubDate>Wed, 06 May 2026 00:00:00 GMT</pubDate>
+      <description>リポジトリ：leafvmaple/mini-cocos シリーズ：mini-cocos 設計復盤 2 のサブ記事 関連サブシステム： / / / mini-cocos のリソースパイプラインは「正しく作れば透明、誤れば至る所で死ぬ」2 箇所で姿を現す： 2 件とは： フォント描画をどう殺さないか （FontAtlas の文字オンデマンド / インクリメンタルラスタライズ、 の…</description>
+    </item>
+    <item>
+      <title>`update(t∈[0,1])` は複合 Action を代数化する唯一の前提</title>
+      <link>https://leafvmaple.com/post/7</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/7</guid>
+      <pubDate>Thu, 30 Apr 2026 00:00:00 GMT</pubDate>
+      <description>リポジトリ：leafvmaple/mini-cocos シリーズ：mini-cocos 設計復盤 2 のサブ記事 関連サブシステム： / / / / mini-cocos の Action システムはほぼ cocos2d-x の設計を直移植したもの。 は計 1,082 行で / / / / と一連の具体 tween（ / / / …）を実装し、すべて 1 本の API 契約に立脚する：…</description>
+    </item>
+    <item>
+      <title>`iretq` がついでにプロセスを ring 3 へ落とす：fork の trapret を再利用して信頼できない ELF を実行</title>
+      <link>https://leafvmaple.com/post/18</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/18</guid>
+      <pubDate>Sat, 25 Apr 2026 00:00:00 GMT</pubDate>
+      <description>リポジトリ：leafvmaple/zonix-plus シリーズ：Zonix OS 設計振り返り 11 の詳細記事 対象サブシステム： / / / / （2026-04-08）以前、Zonix で走るのはすべて カーネルスレッド —— 同特権レベル（ring 0 / EL1）・同アドレス空間、本質的に「信頼するコード」だった。このコミットと （自作 C コンパイラ zcc…</description>
+    </item>
+    <item>
+      <title>64 ビット整数 1 個でフレーム全 draw call をソートする</title>
+      <link>https://leafvmaple.com/post/6</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/6</guid>
+      <pubDate>Wed, 22 Apr 2026 00:00:00 GMT</pubDate>
+      <description>リポジトリ：leafvmaple/mini-cocos シリーズ：mini-cocos 設計復盤 2 のサブ記事 関連サブシステム： / / / / バックエンド mini-cocos のレンダリング層は 2 件で「メインスレッドがコマンド構築、レンダースレッドがコマンド消費」のパイプラインを支える： 2 件とは sortKey エンコーディング （1 つの 64-bit 整数が透明分段 /…</description>
+    </item>
+    <item>
+      <title>EventDispatcher 3 度の書き直し：二優先度チェーン + pending queue + ネスト dispatch カウンタ</title>
+      <link>https://leafvmaple.com/post/5</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/5</guid>
+      <pubDate>Sat, 18 Apr 2026 00:00:00 GMT</pubDate>
+      <description>リポジトリ：leafvmaple/mini-cocos シリーズ：mini-cocos 設計復盤 2 のサブ記事 関連サブシステム： / / 派遣 は mini-cocos で最も書き直されたサブシステム —— は 9 コミットを列挙し、そのうち 3 つが構造的な書き直し： v1（ ）：グローバルコールバック表、1 週間で 3 つの独立問題に陥落。v2（ ）：二優先度チェーン +…</description>
+    </item>
+    <item>
+      <title>freestanding は C への後退ではない：カーネルでも RAII と `Result&lt;T&gt;` は動く</title>
+      <link>https://leafvmaple.com/post/17</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/17</guid>
+      <pubDate>Sun, 12 Apr 2026 00:00:00 GMT</pubDate>
+      <description>リポジトリ：leafvmaple/zonix-plus シリーズ：Zonix OS 設計振り返り 11 の詳細記事 対象サブシステム： / / / / ツールチェーン Zonix のカーネル全体は C++17 freestanding —— 、libc も STL も例外も RTTI も無いが、テンプレート、RAII、 、 、名前空間は一つも欠けていない。欠けたランタイムを補う代償は の 94…</description>
+    </item>
+    <item>
+      <title>走査中に自分を erase する：iterator 無効化のバグは週 1 回しか表に出ない</title>
+      <link>https://leafvmaple.com/post/4</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/4</guid>
+      <pubDate>Fri, 10 Apr 2026 00:00:00 GMT</pubDate>
+      <description>リポジトリ：leafvmaple/mini-cocos シリーズ：mini-cocos 設計復盤 2 のサブ記事 関連サブシステム： / 、および「走査中に変更され得る」全てのシステム このパターンは mini-cocos の 3 つの独立サブシステムで同じ形で現れる： 特徴は「言語／フレームワーク非依存・出現頻度高・誤りの症状が極めて隠蔽的」の 3 条件を全て満たすこと。本稿は / /…</description>
+    </item>
+    <item>
+      <title>`shared_ptr` に無い意味論：autorelease の「このフレームで死ぬ」</title>
+      <link>https://leafvmaple.com/post/3</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/3</guid>
+      <pubDate>Sun, 05 Apr 2026 00:00:00 GMT</pubDate>
+      <description>リポジトリ：leafvmaple/mini-cocos シリーズ：mini-cocos 設計復盤 2 のサブ記事 関連サブシステム： / / / mini-cocos の現在のメモリモデル分布（grep 実測）： 3 つの数字が 3 種類の異なるオブジェクト生存戦略に対応する： + autorelease が「値オブジェクト + シーングラフノード + Lua 公開オブジェクト」を、手書き…</description>
+    </item>
+    <item>
+      <title>侵入型リスト：カーネルではリストノードはほぼ単独で malloc されない</title>
+      <link>https://leafvmaple.com/post/19</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/19</guid>
+      <pubDate>Mon, 30 Mar 2026 00:00:00 GMT</pubDate>
+      <description>リポジトリ：leafvmaple/zonix-plus シリーズ：Zonix OS 設計振り返り 11 の詳細記事 対象サブシステム： / / / / 各 （PMM 空きページチェーン）、各 （プロセスチェーン / ハッシュチェーン / 親子チェーンの 3 本）、各 （VMA チェーン + swap 候補キュー）、各 —— zonix で「あるチェーンに繋がれる必要のある」オブジェクトはすべて…</description>
+    </item>
+    <item>
+      <title>mini-cocos：cocos2d-x をゼロから書き直す ― 設計振り返り</title>
+      <link>https://leafvmaple.com/post/2</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/2</guid>
+      <pubDate>Sat, 28 Mar 2026 00:00:00 GMT</pubDate>
+      <description>リポジトリ：leafvmaple/mini-cocos コミット期間：2026-03-25 → 2026-05-22、41 コミット 規模： 11,000 行の C++17、CMake + GLFW + Lua 5.4、OpenGL 3.3 / Vulkan の二系統バックエンド 本稿は mini-cocos の インデックス記事 である。各サブシステムの深堀りは独立記事に分割した（§2…</description>
+    </item>
+    <item>
+      <title>2 つ目のアーキテクチャは `kernel/` の裸 `inb` を 1 行残らず暴く</title>
+      <link>https://leafvmaple.com/post/15</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/15</guid>
+      <pubDate>Wed, 25 Mar 2026 00:00:00 GMT</pubDate>
+      <description>リポジトリ：leafvmaple/zonix-plus シリーズ：Zonix OS 設計振り返り 11 の詳細記事 対象サブシステム： / / / 全体の レイアウト ディレクトリには / / を 1 行たりとも書いてはならない —— ハードウェアに触れる動作はすべて 3 つの対称な HAL の背後に収束する： 3 つのアーキで 32 / 33 / 34 関数、差は ±1。3…</description>
+    </item>
+    <item>
+      <title>spinlock が単一コアで排他するのは別 CPU ではなく割り込みハンドラ</title>
+      <link>https://leafvmaple.com/post/16</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/16</guid>
+      <pubDate>Sun, 22 Mar 2026 00:00:00 GMT</pubDate>
+      <description>リポジトリ：leafvmaple/zonix-plus シリーズ：Zonix OS 設計振り返り 11 の詳細記事 対象サブシステム： / / Zonix は現在シングルコア（uniprocessor）カーネルですが、一揃いの同期プリミティブを持ちます：Spinlock、WaitQueue、Semaphore、Mutex、 、 （…</description>
+    </item>
+    <item>
+      <title>zcc が吐く ELF を Zonix で直接走らせる：自作ツールチェーンと OS の閉環</title>
+      <link>https://leafvmaple.com/post/20</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/20</guid>
+      <pubDate>Wed, 18 Mar 2026 00:00:00 GMT</pubDate>
+      <description>リポジトリ：leafvmaple/zcc コミット期間：2024-07-03 → 2026-05-22、116 コミット、二つの集中開発期にまたがる（2025-08 の本体実装 / 2026-03–05 の Zonix との閉環） 規模： 3,142 行の C++17 + アセンブリ + リンカスクリプト、 LLVM IR 単一バックエンド 、 x86 64 / riscv64 二種類の…</description>
+    </item>
+    <item>
+      <title>`leave;ret` が 6 週間隠した RSP off-by-8、Clang に切り替えた瞬間 triple fault</title>
+      <link>https://leafvmaple.com/post/12</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/12</guid>
+      <pubDate>Sun, 15 Mar 2026 00:00:00 GMT</pubDate>
+      <description>リポジトリ：leafvmaple/zonix-plus シリーズ：Zonix OS 設計振り返り 11 の詳細記事 対象サブシステム： / / / / 2026-03-12 に zonix-plus のツールチェーンを GCC/GNU ld から Clang/LLD/LLVM へ全面移行（ ）したとき、最初の がいきなり triple fault した。コンソールには panic…</description>
+    </item>
+    <item>
+      <title>`syscall.h` 1 枚、二つの物理コピー、三人の消費者：zcc と Zonix の ABI 継ぎ目</title>
+      <link>https://leafvmaple.com/post/21</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/21</guid>
+      <pubDate>Thu, 05 Mar 2026 00:00:00 GMT</pubDate>
+      <description>リポジトリ：leafvmaple/zcc + leafvmaple/zonix-plus シリーズ：zcc メインインデックス 20 の継ぎ目深掘り 対象サブシステム： / / / zcc プロジェクトで 本当に体系の閉環を担っているのは 1,500 行の codegen ではなく、30 行の 。このヘッダは 6 つのシステムコール番号（ / / / / / ）と 3 つの fd…</description>
+    </item>
+    <item>
+      <title>BIOS と UEFI は `head.S` で合流：`rdi=&amp;BootInfo`</title>
+      <link>https://leafvmaple.com/post/14</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/14</guid>
+      <pubDate>Fri, 20 Feb 2026 00:00:00 GMT</pubDate>
+      <description>リポジトリ：leafvmaple/zonix-plus シリーズ：Zonix OS 設計振り返り 11 の詳細記事 対象サブシステム： / / x86 で zonix-plus は BIOS と UEFI の両ファームウェアをサポートし、最終的な成果物は異なる入口から出発するがすべて同じ へ合流する： ブート期はカーネルで 足元の地盤が歩きながら崩れる コードだ：CPU…</description>
+    </item>
+    <item>
+      <title>IR バックエンドを 1 つ削った日に正味 -1,414 行：zcc の LLVM codegen はどう薄層になったか</title>
+      <link>https://leafvmaple.com/post/22</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/22</guid>
+      <pubDate>Sun, 15 Feb 2026 00:00:00 GMT</pubDate>
+      <description>リポジトリ：leafvmaple/zcc シリーズ：zcc メインインデックス 20 の後段深掘り 対象サブシステム： / の メソッド / 初期に削除された と zcc の後段設計を理解するための一つの commit を選ぶなら、 （2026-03-12、&quot;remove Koopa backend and template-based IR adapter layer&quot;）。これは 2,552…</description>
+    </item>
+    <item>
+      <title>SysY から C0 へ：教育用文法の上に `printf(&quot;Hello\n&quot;)` を編める最小フロントエンドを育てる</title>
+      <link>https://leafvmaple.com/post/23</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/23</guid>
+      <pubDate>Sat, 10 Jan 2026 00:00:00 GMT</pubDate>
+      <description>リポジトリ：leafvmaple/zcc シリーズ：zcc メインインデックス 20 のフロントエンド深掘り 対象サブシステム： / / / 回帰テスト / zcc のフロントエンドは PKU コンパイラ実習の SysY 言語から出発（ 、2024-07）：int スカラ、一次元配列、関数、 、 、 char も for も文字列リテラルも printf も無し 。Zonix ユーザープログラム…</description>
+    </item>
+    <item>
+      <title>PTE の上位 56 ビットはタダで使える swap テーブル</title>
+      <link>https://leafvmaple.com/post/13</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/13</guid>
+      <pubDate>Sat, 25 Oct 2025 00:00:00 GMT</pubDate>
+      <description>リポジトリ：leafvmaple/zonix-plus シリーズ：Zonix OS 設計振り返り 11 の詳細記事 対象サブシステム： / / / x86 64 の PTE は 64 ビット。Intel SDM Vol.3A §4.5（&quot;4-Level Paging and 5-Level Paging&quot;）/ Table 4-19 がこの 64 ビットを定めている：bit 0 は…</description>
+    </item>
+    <item>
+      <title>Zonix：ゼロから作るマルチ ISA OS カーネル</title>
+      <link>https://leafvmaple.com/post/11</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/11</guid>
+      <pubDate>Mon, 01 Apr 2024 00:00:00 GMT</pubDate>
+      <description>リポジトリ：leafvmaple/zonix-plus コミット期間：2026-01-28 → 2026-05-22、91 コミット、現在 v0.11.x &quot;Genesis&quot; 規模： 24,000 行の C++17 freestanding + アセンブリ、Clang/LLD/LLVM ツールチェーン、 x86 64 / aarch64 / riscv64 の三アーキテクチャ 機能：BIOS +…</description>
+    </item>
+  </channel>
+</rss>

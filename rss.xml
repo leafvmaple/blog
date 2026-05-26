@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Zohar Lee 事件簿</title>
+    <link>https://leafvmaple.com/</link>
+    <atom:link href="https://leafvmaple.com/rss.xml" rel="self" type="application/rss+xml"/>
+    <description>资深游戏开发者 / AI Native 工程师，记录游戏引擎、渲染、操作系统内核与现代 C++ 的技术实践。</description>
+    <language>zh-CN</language>
+    <lastBuildDate>Tue, 26 May 2026 09:10:32 GMT</lastBuildDate>
+    <item>
+      <title>一份别名头：mini-cocos 在 hosted 与 freestanding 之间切换的总开关</title>
+      <link>https://leafvmaple.com/post/10</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/10</guid>
+      <pubDate>Wed, 20 May 2026 00:00:00 GMT</pubDate>
+      <description>仓库：leafvmaple/mini-cocos 系列：mini-cocos 设计复盘 2 的子篇 相关子系统： / 子模块 / 全引擎 STL 调用点 mini-cocos 当前 STL 收敛状态（grep 实测）： 这条接缝来自一个比 mini-cocos 本身更长线的目标： 把它作为自制 OS 的 UI 框架嵌进去 。OS 没有 host libstdc++，引擎里所有 / /…</description>
+    </item>
+    <item>
+      <title>Lua / C++ 边界的所有权不对称：sol2 的默认行为正好相反</title>
+      <link>https://leafvmaple.com/post/9</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/9</guid>
+      <pubDate>Tue, 12 May 2026 00:00:00 GMT</pubDate>
+      <description>仓库：leafvmaple/mini-cocos 系列：mini-cocos 设计复盘 2 的衍生深读 涉及子系统： / 风格 metatable / lifecycle 跨边界管理 主流做法是直接用 sol2 —— 三行模板就能把一个 C++ class 绑给 Lua。mini-cocos 没用。代价： 1,529 行手写 metatable —— sol2 同等功能大约 3 行能搞定。这…</description>
+    </item>
+    <item>
+      <title>CJK Label 卡死加载界面的不是字符多，是每个字一张纹理</title>
+      <link>https://leafvmaple.com/post/8</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/8</guid>
+      <pubDate>Wed, 06 May 2026 00:00:00 GMT</pubDate>
+      <description>仓库：leafvmaple/mini-cocos 系列：mini-cocos 设计复盘 2 的衍生深读 涉及子系统： / / / mini-cocos 的资源管线在两个看起来不相关、但症状相似的地方暴露出来 —— &quot;做对了透明、做错了到处崩&quot;： 两件事是： 字体绘制怎么不暴毙 （FontAtlas 字形按需 / 增量光栅化，靠 的 单字符光栅 + 共享 atlas），以及 怎么在多语言 +…</description>
+    </item>
+    <item>
+      <title>`update(t∈[0,1])` 是复合 Action 代数化的唯一前提</title>
+      <link>https://leafvmaple.com/post/7</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/7</guid>
+      <pubDate>Thu, 30 Apr 2026 00:00:00 GMT</pubDate>
+      <description>仓库：leafvmaple/mini-cocos 系列：mini-cocos 设计复盘 2 的衍生深读 涉及子系统： / / / / mini-cocos 的 Action 系统几乎是直接搬 cocos2d-x 的设计。 共 1,082 行实现 / / / / 以及一系列具体 tween（ / / / …），全部建立在一条 API 契约上： 这套设计 真正聪明的地方不在 或 ，而在 的契约本身…</description>
+    </item>
+    <item>
+      <title>`iretq` 顺手把进程降到 ring 3：复用 fork 的 trapret 加载不可信 ELF</title>
+      <link>https://leafvmaple.com/post/18</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/18</guid>
+      <pubDate>Sat, 25 Apr 2026 00:00:00 GMT</pubDate>
+      <description>仓库：leafvmaple/zonix-plus 系列：Zonix OS 设计复盘 11 的衍生深读 涉及子系统： / / / / 在 （2026-04-08）之前，Zonix 里跑的全是 内核线程 —— 同特权级（ring 0 / EL1）、同地址空间，本质上是&quot;我信任的代码&quot;。这个 commit 加上 （接入自研 C 编译器 zcc 作为子模块）跨过了一道质变的坎：…</description>
+    </item>
+    <item>
+      <title>一个 64 位整数排完整帧 draw call</title>
+      <link>https://leafvmaple.com/post/6</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/6</guid>
+      <pubDate>Wed, 22 Apr 2026 00:00:00 GMT</pubDate>
+      <description>仓库：leafvmaple/mini-cocos 系列：mini-cocos 设计复盘 2 的衍生深读 涉及子系统： / / / / 后端 mini-cocos 的渲染层用两件事撑住&quot;主线程构造命令、渲染线程消费命令&quot;这条流水线： 两件事是 sortKey 编码 （一个 64-bit 整数同时承担透明分段 / state 合并 / z 排序的排序键）和 RHI 抽象 （6…</description>
+    </item>
+    <item>
+      <title>EventDispatcher 三次重写：双优先级链 + pending queue + 嵌套 dispatch 计数器</title>
+      <link>https://leafvmaple.com/post/5</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/5</guid>
+      <pubDate>Sat, 18 Apr 2026 00:00:00 GMT</pubDate>
+      <description>仓库：leafvmaple/mini-cocos 系列：mini-cocos 设计复盘 2 的衍生深读 涉及子系统： / / 派发 是 mini-cocos 里被改动最多的子系统 —— 列出 9 个 commit，其中 3 次是结构性重写： v1（ ）：全局回调表，一周后被三个独立问题打穿。v2（ ）：双优先级链 + 对象，能跑但嵌套 dispatch 触发 listener 集合 mutate…</description>
+    </item>
+    <item>
+      <title>freestanding 不等于退回 C：内核里照样跑 RAII 和 `Result&lt;T&gt;`</title>
+      <link>https://leafvmaple.com/post/17</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/17</guid>
+      <pubDate>Sun, 12 Apr 2026 00:00:00 GMT</pubDate>
+      <description>仓库：leafvmaple/zonix-plus 系列：Zonix OS 设计复盘 11 的衍生深读 涉及子系统： / / / / 工具链 Zonix 整个内核是 C++17 freestanding —— ，没有 libc、没有 STL、没有异常、没有 RTTI，但模板、RAII、 、 、命名空间一个没少。把缺的运行时支撑补出来的代价仅 94 行：6 个 C 函数（ / / / / / ）+…</description>
+    </item>
+    <item>
+      <title>迭代中 erase 自己：iterator 失效的 bug 一周才显形一次</title>
+      <link>https://leafvmaple.com/post/4</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/4</guid>
+      <pubDate>Fri, 10 Apr 2026 00:00:00 GMT</pubDate>
+      <description>仓库：leafvmaple/mini-cocos 系列：mini-cocos 设计复盘 2 的衍生深读 涉及子系统： / ，以及任何&quot;在遍历中可能被修改&quot;的系统 这个 pattern 在 mini-cocos 三个独立子系统里以相同的形态出现： 特点是&quot;语言/框架无关、出现频率高、做错时症状极隐蔽&quot;三条全占。这一篇把它从 / / 里抽出来，单独说清楚什么时候要用、怎么实现、有哪些反模式。 1.…</description>
+    </item>
+    <item>
+      <title>`shared_ptr` 没有的语义：autorelease 的&quot;这一帧死&quot;</title>
+      <link>https://leafvmaple.com/post/3</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/3</guid>
+      <pubDate>Sun, 05 Apr 2026 00:00:00 GMT</pubDate>
+      <description>仓库：leafvmaple/mini-cocos 系列：mini-cocos 设计复盘 2 的衍生深读 涉及子系统： / / / mini-cocos 当前的内存模型分布（grep 实测）： 三个数字对应三种不同的对象生命周期策略： + autorelease 处理「值对象 + 场景图节点 + Lua 暴露对象」、手写 refcount 处理「GPU/IO 资源」、 处理「单一所有者的内部组件」…</description>
+    </item>
+    <item>
+      <title>侵入式链表：内核里链表节点几乎从不单独 malloc</title>
+      <link>https://leafvmaple.com/post/19</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/19</guid>
+      <pubDate>Mon, 30 Mar 2026 00:00:00 GMT</pubDate>
+      <description>仓库：leafvmaple/zonix-plus 系列：Zonix OS 设计复盘 11 的衍生深读 涉及子系统： / / / / 每个 （PMM 空闲页链）、每个 （进程链 / 哈希链 / 父子链 3 条）、每个 （VMA 链 + swap 候选队列）、每个 —— zonix 里需要被&quot;挂在某条链上&quot;的对象都自带一个 字段。整套机制 145 行实现，96 处调用， 全程没有一次…</description>
+    </item>
+    <item>
+      <title>mini-cocos：cocos2d-x 的从零重写与设计复盘</title>
+      <link>https://leafvmaple.com/post/2</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/2</guid>
+      <pubDate>Sat, 28 Mar 2026 00:00:00 GMT</pubDate>
+      <description>仓库：leafvmaple/mini-cocos 提交跨度：2026-03-25 → 2026-05-22，41 次提交 体量： 11,000 行 C++17，CMake + GLFW + Lua 5.4，OpenGL 3.3 / Vulkan 双后端 这一篇是 mini-cocos 的 主索引帖 。每个子系统的深读拆成了独立文章（见 §2 系列文章），这里只串骨架。…</description>
+    </item>
+    <item>
+      <title>第二个架构会引爆 `kernel/` 里每一条裸 `inb`</title>
+      <link>https://leafvmaple.com/post/15</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/15</guid>
+      <pubDate>Wed, 25 Mar 2026 00:00:00 GMT</pubDate>
+      <description>仓库：leafvmaple/zonix-plus 系列：Zonix OS 设计复盘 11 的衍生深读 涉及子系统： / / / 全局 布局 目录里 不允许出现一条 、 、 —— 所有摸硬件的动作收敛到三套对称的 HAL 后面： 三个架构 32 / 33 / 34 个函数，差异…</description>
+    </item>
+    <item>
+      <title>spinlock 在单核上互斥的不是 CPU，是中断处理程序</title>
+      <link>https://leafvmaple.com/post/16</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/16</guid>
+      <pubDate>Sun, 22 Mar 2026 00:00:00 GMT</pubDate>
+      <description>仓库：leafvmaple/zonix-plus 系列：Zonix OS 设计复盘 11 的衍生深读 涉及子系统： / / Zonix 目前是单核（uniprocessor）内核，但它有一整套同步原语：Spinlock、WaitQueue、Semaphore、Mutex、 、 （ 一次性引入）。code review 里第一个问题永远是：&quot;单核要 spinlock 干嘛？没有第二个 CPU…</description>
+    </item>
+    <item>
+      <title>zcc 编出的 ELF 直接跑在 Zonix 上：自研工具链与 OS 的闭环</title>
+      <link>https://leafvmaple.com/post/20</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/20</guid>
+      <pubDate>Wed, 18 Mar 2026 00:00:00 GMT</pubDate>
+      <description>仓库：leafvmaple/zcc 提交跨度：2024-07-03 → 2026-05-22，116 次提交，跨两个集中开发期（2025-08 主体实现 / 2026-03–05 与 Zonix 闭环） 体量： 3,142 行 C++17 + 汇编 + 链接脚本， LLVM IR 单后端 ， x86 64 / riscv64 两套 freestanding runtime 能力：C…</description>
+    </item>
+    <item>
+      <title>`leave;ret` 掩盖了六周的 RSP off-by-8，换 Clang 当场 triple fault</title>
+      <link>https://leafvmaple.com/post/12</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/12</guid>
+      <pubDate>Sun, 15 Mar 2026 00:00:00 GMT</pubDate>
+      <description>仓库：leafvmaple/zonix-plus 系列：Zonix OS 设计复盘 11 的衍生深读 涉及子系统： / / / / 2026-03-12 把 zonix-plus 的工具链从 GCC/GNU ld 整体迁到 Clang/LLD/LLVM（ ），第一次 直接 triple fault，控制台一行 panic 都没来得及打。 缩到这个 commit；diff 里和 800 行…</description>
+    </item>
+    <item>
+      <title>一份 `syscall.h`、两份物理拷贝、三方消费者：zcc 和 Zonix 之间的 ABI 接缝</title>
+      <link>https://leafvmaple.com/post/21</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/21</guid>
+      <pubDate>Thu, 05 Mar 2026 00:00:00 GMT</pubDate>
+      <description>仓库：leafvmaple/zcc + leafvmaple/zonix-plus 系列：zcc 主索引帖 20 的接缝深读 涉及子系统： / / / zcc 项目里 真正承载体系闭环的，不是 1,500 行 codegen，是一份 30 行的 。这份头文件定义 6 个系统调用号（ / / / / / ）和 3 个 fd 常量，被三方各自 include： - Zonix 内核 的 ，C++…</description>
+    </item>
+    <item>
+      <title>BIOS 与 UEFI 在 `head.S` 汇合：`rdi=&amp;BootInfo`</title>
+      <link>https://leafvmaple.com/post/14</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/14</guid>
+      <pubDate>Fri, 20 Feb 2026 00:00:00 GMT</pubDate>
+      <description>仓库：leafvmaple/zonix-plus 系列：Zonix OS 设计复盘 11 的衍生深读 涉及子系统： / / x86 上 zonix-plus 同时支持 BIOS 和 UEFI 两种固件，最终产物从不同入口出发但都跳进同一个 ： 引导期是内核里 脚下的地基边走边塌 的一段代码：要切换 CPU 模式（real → protected → long）、重建页表（恒等映射 →…</description>
+    </item>
+    <item>
+      <title>删掉一个 IR 后端那天净减 1,414 行：zcc 的 LLVM codegen 是怎么瘦成薄壳的</title>
+      <link>https://leafvmaple.com/post/22</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/22</guid>
+      <pubDate>Sun, 15 Feb 2026 00:00:00 GMT</pubDate>
+      <description>仓库：leafvmaple/zcc 系列：zcc 主索引帖 20 的后端深读 涉及子系统： / 的 方法 / 早期被删除的 和 如果只看一个 commit 来理解 zcc 后端的设计，应该看 （2026-03-12，&quot;remove Koopa backend and template-based IR adapter layer&quot;）。它 删了 2,552 行、加了 1,138 行，净…</description>
+    </item>
+    <item>
+      <title>从 SysY 到 C0：在一份教学文法上长出能编 `printf(&quot;Hello\n&quot;)` 的最小前端</title>
+      <link>https://leafvmaple.com/post/23</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/23</guid>
+      <pubDate>Sat, 10 Jan 2026 00:00:00 GMT</pubDate>
+      <description>仓库：leafvmaple/zcc 系列：zcc 主索引帖 20 的前端深读 涉及子系统： / / / 回归测试 / zcc 的前端是从 PKU 编译实验课的 SysY 语言起步的（ ，2024-07）：int 标量、一维数组、函数、 、 ， 没有 char、没有 for、没有字符串字面量、没有 printf 。要让它能编 Zonix 用户程序 ，必须扩前端到一个 刚好能写实用 C 子集…</description>
+    </item>
+    <item>
+      <title>PTE 高 56 位是免费的 swap 表</title>
+      <link>https://leafvmaple.com/post/13</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/13</guid>
+      <pubDate>Sat, 25 Oct 2025 00:00:00 GMT</pubDate>
+      <description>仓库：leafvmaple/zonix-plus 系列：Zonix OS 设计复盘 11 的衍生深读 涉及子系统： / / / x86 64 的 PTE 是 64 位。Intel SDM Vol.3A §4.5（&quot;4-Level Paging and 5-Level Paging&quot;）/ Table 4-19 把这 64 位钉死：bit 0 present，bit 1 R/W，bit 2…</description>
+    </item>
+    <item>
+      <title>Zonix：从零开始的多 ISA 操作系统内核</title>
+      <link>https://leafvmaple.com/post/11</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/11</guid>
+      <pubDate>Mon, 01 Apr 2024 00:00:00 GMT</pubDate>
+      <description>仓库：leafvmaple/zonix-plus 提交跨度：2026-01-28 → 2026-05-22，91 次提交，当前 v0.11.x &quot;Genesis&quot; 体量： 24,000 行 C++17 freestanding + 汇编，Clang/LLD/LLVM 工具链， x86 64 / aarch64 / riscv64 三架构 能力：BIOS + UEFI 双引导、四级页表 + 缺页…</description>
+    </item>
+  </channel>
+</rss>
