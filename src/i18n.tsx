@@ -45,7 +45,6 @@ export function LangProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     document.documentElement.lang = lang === 'ja' ? 'ja' : 'zh-CN'
-    document.title = T[lang].doc_title
   }, [lang])
 
   const setLang = useCallback((l: Lang) => {
@@ -69,6 +68,8 @@ export function localeOf(lang: Lang): string {
 export const T = {
   zh: {
     doc_title: 'Zohar Lee 事件簿',
+    site_description: '资深游戏开发者 / AI Native 工程师，记录游戏引擎、渲染、操作系统内核与现代 C++ 的技术实践。',
+    not_found: '页面不存在',
     nav_blog: 'Blog',
     home_title: '文章',
     home_pinned: '置顶',
@@ -131,6 +132,8 @@ export const T = {
   },
   ja: {
     doc_title: 'Zohar Lee 事件簿',
+    site_description: 'シニアゲーム開発者 / AI Native エンジニア。ゲームエンジン、レンダリング、OS カーネル、モダン C++ の技術実践の記録。',
+    not_found: 'ページが見つかりません',
     nav_blog: 'Blog',
     home_title: '記事',
     home_pinned: 'ピン留め',

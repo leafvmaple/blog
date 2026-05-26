@@ -4,6 +4,7 @@ import { getIssue, isHiddenLabel } from '../api'
 import type { Issue } from '../api'
 import Comments from '../components/Comments'
 import { useLang, useT, localeOf, pickLocalized, useLabelT } from '../i18n'
+import { useDocumentMeta } from '../useDocumentMeta'
 import 'github-markdown-css/github-markdown.css'
 import './PostDetail.css'
 
@@ -25,6 +26,9 @@ export default function PostDetail() {
   }, [number])
 
   const html = issue ? pickLocalized(issue.bodiesHtml, lang, '') : ''
+  const metaTitle = issue ? pickLocalized(issue.titles, lang, issue.title) : undefined
+  const metaDesc = issue ? pickLocalized(issue.descriptions, lang, '') : undefined
+  useDocumentMeta({ title: metaTitle, description: metaDesc })
 
   if (loading) return <div className="detail-state">{t.loading}</div>
   if (error || !issue) return (

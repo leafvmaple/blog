@@ -1,8 +1,10 @@
 import { useT } from '../i18n'
+import { useDocumentMeta } from '../useDocumentMeta'
 import './About.css'
 
 export default function About() {
   const t = useT()
+  useDocumentMeta({ description: t.site_description })
   return (
     <div className="about">
       <section className="about-hero">

@@ -2,12 +2,14 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { getIssues, isPinned, type Issue } from '../api'
 import Post from '../components/Post'
 import { useT } from '../i18n'
+import { useDocumentMeta } from '../useDocumentMeta'
 import './Home.css'
 
 const PER_PAGE = 20
 
 export default function Home() {
   const t = useT()
+  useDocumentMeta({ title: t.home_title, description: t.site_description })
   const [issues, setIssues] = useState<Issue[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
