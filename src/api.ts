@@ -9,16 +9,18 @@ export interface Issue {
   number: number
   title: string
   /**
-   * Per-language titles, parsed from `中文 || 日本語` in the Issue title.
-   * Always present; for titles without `||`, this maps `zh` to the raw title.
+   * Per-language titles, from `<!--title:xx-->` markers (or legacy `中文 || 日本語`).
+   * Falls back to the raw Issue title when a locale has no localized title.
    */
   titles: Record<string, string>
-  body: string
   /**
-   * Per-language bodies, parsed from `<!--lang:xx-->...<!--/lang:xx-->` markers in `body`.
-   * Always present; for legacy posts without markers, this maps every key to the raw body.
+   * Per-language pre-rendered HTML, from `<!--lang:xx-->...<!--/lang:xx-->` blocks
+   * run through marked + shiki at build time. Leading <h1> is stripped (it's
+   * already rendered in the post page header).
    */
-  bodies: Record<string, string>
+  bodiesHtml: Record<string, string>
+  /** Per-language plain-text excerpt (~200 chars) for meta description / RSS. */
+  descriptions: Record<string, string>
   html_url: string
   created_at: string
   comments: number
@@ -34,7 +36,8 @@ export interface Issue {
 
 export interface Comment {
   id: number
-  body: string
+  /** Pre-rendered HTML, marked + shiki at build time. */
+  bodyHtml: string
   created_at: string
   html_url: string
   user: {

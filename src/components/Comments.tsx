@@ -1,8 +1,7 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { getIssueComments } from '../api'
 import type { Comment } from '../api'
 import { useLang, useT, localeOf } from '../i18n'
-import { parseMarkdown } from '../markdown'
 import './Comments.css'
 
 interface Props {
@@ -52,11 +51,6 @@ export default function Comments({ issueNumber, issueUrl, totalComments }: Props
     if (page > 1) loadPage(page)
   }, [page, loadPage])
 
-  const rendered = useMemo(
-    () => comments.map(c => ({ comment: c, html: parseMarkdown(c.body || '') })),
-    [comments],
-  )
-
   return (
     <section className="comments-section">
       <div className="comments-header">
@@ -76,7 +70,7 @@ export default function Comments({ issueNumber, issueUrl, totalComments }: Props
       ) : (
         <>
           <ul className="comments-list">
-            {rendered.map(({ comment, html }) => (
+            {comments.map(comment => (
               <li key={comment.id} className="comment-item">
                 <a href={comment.user.html_url} target="_blank" rel="noopener noreferrer" className="comment-avatar-link">
                   <img src={comment.user.avatar_url} alt={comment.user.login} className="comment-avatar" />
@@ -98,7 +92,7 @@ export default function Comments({ issueNumber, issueUrl, totalComments }: Props
                     data-color-mode="auto"
                     data-light-theme="light"
                     data-dark-theme="dark"
-                    dangerouslySetInnerHTML={{ __html: html }}
+                    dangerouslySetInnerHTML={{ __html: comment.bodyHtml }}
                   />
                 </div>
               </li>

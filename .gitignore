@@ -12,8 +12,11 @@ dist
 dist-ssr
 *.local
 
-# Snapshotted blog data — regenerated each build by scripts/fetch-posts.mjs
+# Snapshotted blog data + feeds — regenerated each build by scripts/fetch-posts.mjs
 public/data/
+public/sitemap.xml
+public/rss.xml
+public/rss.ja.xml
 
 # Claude Code local memory / session data
 .claude/

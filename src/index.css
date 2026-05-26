@@ -58,3 +58,54 @@ code {
     color: #6db8ff;
   }
 }
+
+/* Shiki dual-theme: bodies are pre-rendered at build time with both light and
+   dark colors emitted as CSS variables (--shiki-light / --shiki-dark). Switch
+   between them based on prefers-color-scheme. The markdown-body wrapper also
+   has its own bg from github-markdown-css; let shiki own the <pre> bg. */
+.shiki,
+.shiki span {
+  color: var(--shiki-light);
+  background-color: var(--shiki-light-bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  .shiki,
+  .shiki span {
+    color: var(--shiki-dark);
+    background-color: var(--shiki-dark-bg);
+  }
+}
+
+.shiki {
+  padding: 12px 16px;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-size: 0.9em;
+  line-height: 1.5;
+  font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+}
+
+.shiki code {
+  background: transparent;
+  padding: 0;
+}
+
+/* Code fences without a recognized language fall back to plain <pre>. Match
+   shiki's surface so the page reads consistently. */
+.shiki-fallback {
+  padding: 12px 16px;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-size: 0.9em;
+  line-height: 1.5;
+  background: #f6f8fa;
+  color: #24292e;
+}
+
+@media (prefers-color-scheme: dark) {
+  .shiki-fallback {
+    background: #161b22;
+    color: #e1e4e8;
+  }
+}
