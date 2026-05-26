@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { getIssue, getAllIssues, isHiddenLabel } from '../api'
 import type { Issue } from '../api'
 import Comments from '../components/Comments'
 import { useLang, useT, localeOf, pickLocalized, useLabelT } from '../i18n'
 import { useDocumentMeta } from '../useDocumentMeta'
+import { useCodeCopy } from '../useCodeCopy'
 import { siblingsInSeries } from '../series'
 import 'github-markdown-css/github-markdown.css'
 import './PostDetail.css'
@@ -18,6 +19,8 @@ export default function PostDetail() {
   const [allIssues, setAllIssues] = useState<Issue[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const bodyRef = useRef<HTMLDivElement>(null)
+  useCodeCopy(bodyRef)
 
   useEffect(() => {
     if (!number) return
@@ -83,6 +86,7 @@ export default function PostDetail() {
           </a>
         </div>
         <div
+          ref={bodyRef}
           className="markdown-body detail-body"
           data-color-mode="auto"
           data-light-theme="light"

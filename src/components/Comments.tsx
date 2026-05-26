@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { getIssueComments } from '../api'
 import type { Comment } from '../api'
 import { useLang, useT, localeOf } from '../i18n'
+import { useCodeCopy } from '../useCodeCopy'
 import './Comments.css'
 
 interface Props {
@@ -20,6 +21,8 @@ export default function Comments({ issueNumber, issueUrl, totalComments }: Props
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(totalComments > 0)
   const sentinelRef = useRef<HTMLDivElement>(null)
+  const sectionRef = useRef<HTMLElement>(null)
+  useCodeCopy(sectionRef)
 
   const loadPage = useCallback(async (p: number) => {
     setLoading(true)
@@ -52,7 +55,7 @@ export default function Comments({ issueNumber, issueUrl, totalComments }: Props
   }, [page, loadPage])
 
   return (
-    <section className="comments-section">
+    <section ref={sectionRef} className="comments-section">
       <div className="comments-header">
         <h2 className="comments-title">
           {t.comments_title}
