@@ -1,10 +1,5 @@
-.post-link {
-  display: block;
-  text-decoration: none;
-  color: inherit;
-}
-
 .post-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -50,7 +45,6 @@
   font-size: 15px;
   font-weight: 600;
   line-height: 1.4;
-  color: #111;
   letter-spacing: -0.1px;
   white-space: nowrap;
   overflow: hidden;
@@ -59,19 +53,36 @@
   min-width: 0;
 }
 
-@media (prefers-color-scheme: dark) {
-  .post-title { color: #e2e2e2; }
+.post-title-link {
+  color: #111;
+  text-decoration: none;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.post-link:hover .post-title {
-  color: #0071e3;
+/* Stretched link: a pseudo-element on the title link covers the whole card,
+   so clicking anywhere on the card navigates to the post. Labels below get
+   position+z-index so they sit on top and remain independently clickable. */
+.post-title-link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
 }
 
+.post-card:hover .post-title-link { color: #0071e3; }
+
 @media (prefers-color-scheme: dark) {
-  .post-link:hover .post-title { color: #4da3ff; }
+  .post-title-link { color: #e2e2e2; }
+  .post-card:hover .post-title-link { color: #4da3ff; }
 }
 
 .post-labels {
+  position: relative;
+  z-index: 2;
   display: flex;
   gap: 5px;
   flex-shrink: 0;
@@ -84,6 +95,12 @@
   border: 1px solid;
   font-weight: 500;
   white-space: nowrap;
+  text-decoration: none;
+  transition: filter 0.15s;
+}
+
+.post-label:hover {
+  filter: brightness(1.15);
 }
 
 /* Row 2: avatar + author + date + comments */
