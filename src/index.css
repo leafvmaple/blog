@@ -81,7 +81,9 @@ code {
 .shiki-fallback {
   background: rgba(27, 31, 35, 0.05) !important;
   border: 1px solid rgba(27, 31, 35, 0.08);
-  padding: 14px 18px;
+  /* Extra top padding leaves room for the language badge in the upper-left
+     of the code-block wrapper (see .code-lang). */
+  padding: 26px 18px 14px;
   border-radius: 8px;
   overflow-x: auto;
   font-size: 0.88em;
@@ -108,4 +110,86 @@ code {
 .shiki-fallback { color: #24292e; }
 @media (prefers-color-scheme: dark) {
   .shiki-fallback { color: #e1e4e8; }
+}
+
+/* Code-block wrapper: positioning context for the language badge (top-left)
+   and the copy button (top-right). Build-time fetch-posts.mjs wraps every
+   <pre class="shiki"/.shiki-fallback> in this. */
+.code-block {
+  position: relative;
+  margin: 14px 0;
+}
+
+.code-lang {
+  position: absolute;
+  top: 7px;
+  left: 14px;
+  font-size: 10px;
+  font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+  color: rgba(0, 0, 0, 0.42);
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+  pointer-events: none;
+  z-index: 2;
+}
+
+@media (prefers-color-scheme: dark) {
+  .code-lang { color: rgba(255, 255, 255, 0.4); }
+}
+
+.code-copy {
+  position: absolute;
+  top: 5px;
+  right: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s, color 0.15s, border-color 0.15s;
+  z-index: 2;
+}
+
+.code-block:hover .code-copy,
+.code-copy:focus-visible {
+  opacity: 1;
+}
+
+.code-copy:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: rgba(0, 0, 0, 0.78);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.code-copy:focus-visible {
+  outline: 2px solid #0071e3;
+  outline-offset: 1px;
+}
+
+.code-copy .icon-check { display: none; }
+.code-copy.copied { color: #22863a; opacity: 1; }
+.code-copy.copied .icon-copy { display: none; }
+.code-copy.copied .icon-check { display: block; }
+
+@media (prefers-color-scheme: dark) {
+  .code-copy { color: rgba(255, 255, 255, 0.42); }
+  .code-copy:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.88);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  .code-copy:focus-visible { outline-color: #4da3ff; }
+  .code-copy.copied { color: #3fb950; }
+}
+
+/* Touch devices have no hover; surface the button at half opacity instead. */
+@media (hover: none) {
+  .code-copy { opacity: 0.5; }
 }

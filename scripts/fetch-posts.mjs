@@ -164,6 +164,30 @@ function plaintextCodeBlock(code) {
   return `<pre class="shiki-fallback"><code>${escapeHtml(code)}</code></pre>`
 }
 
+// Inline SVGs for the copy button — GitHub Octicons (16x16), kept tiny enough
+// that the per-code-block cost is negligible. Two icons stacked in the same
+// button; CSS swaps which is visible based on .copied class.
+const COPY_ICON_SVG =
+  '<svg class="icon-copy" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">' +
+  '<path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/>' +
+  '<path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/>' +
+  '</svg>'
+const CHECK_ICON_SVG =
+  '<svg class="icon-check" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">' +
+  '<path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/>' +
+  '</svg>'
+
+function wrapCodeBlock(rawLang, codeHtml) {
+  const displayLang = (rawLang || '').toString().trim().toLowerCase()
+  const langBadge = displayLang
+    ? `<span class="code-lang">${escapeHtml(displayLang)}</span>`
+    : ''
+  const langAttr = displayLang ? ` data-lang="${escapeHtml(displayLang)}"` : ''
+  const copyBtn =
+    `<button type="button" class="code-copy" aria-label="Copy code">${COPY_ICON_SVG}${CHECK_ICON_SVG}</button>`
+  return `<div class="code-block"${langAttr}>${langBadge}${copyBtn}${codeHtml}</div>`
+}
+
 async function makeRenderer() {
   const highlighter = await createHighlighter({
     themes: Object.values(SHIKI_THEMES),
@@ -191,7 +215,7 @@ async function makeRenderer() {
     breaks: false,
     renderer: {
       code({ text, lang }) {
-        return highlight(text, lang || '')
+        return wrapCodeBlock(lang, highlight(text, lang || ''))
       },
     },
     walkTokens(token) {
