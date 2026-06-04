@@ -2,7 +2,7 @@
 
 基于 Vite + React + TypeScript 的极简博客，用 GitHub Issues 当 CMS，部署到 GitHub Pages。
 
-**访问地址**：[leafvmaple.com](https://leafvmaple.com)
+**访问地址**：[code.leafvmaple.com](https://code.leafvmaple.com)
 
 ## 怎么写一篇文章
 
