@@ -6,7 +6,14 @@
     <atom:link href="https://leafvmaple.com/rss.xml" rel="self" type="application/rss+xml"/>
     <description>资深游戏开发者 / AI Native 工程师，记录游戏引擎、渲染、操作系统内核与现代 C++ 的技术实践。</description>
     <language>zh-CN</language>
-    <lastBuildDate>Wed, 24 Jun 2026 17:44:45 GMT</lastBuildDate>
+    <lastBuildDate>Wed, 24 Jun 2026 18:09:01 GMT</lastBuildDate>
+    <item>
+      <title>在 Godot 2D 管线上堆出 HD-2D</title>
+      <link>https://leafvmaple.com/post/25</link>
+      <guid isPermaLink="true">https://leafvmaple.com/post/25</guid>
+      <pubDate>Wed, 24 Jun 2026 18:03:15 GMT</pubDate>
+      <description>HD-2D——等距像素世界叠上现代后处理与动态光照,Octopath Traveler / Triangle Strategy 那一脉——的难点不在每个效果本身,而在 Godot 4 的 gl compatibility 2D 后端上怎么把它们落地。两条硬约束塑造了整套管线的形状: 跨 CanvasLayer 的屏幕读取在该后端返回纯白 ; 任何精灵挂上自定义材质,会在受光画布里恒定地暗约一成…</description>
+    </item>
     <item>
       <title>一份别名头：mini-cocos 在 hosted 与 freestanding 之间切换的总开关</title>
       <link>https://leafvmaple.com/post/10</link>
