@@ -6,7 +6,7 @@
     <atom:link href="https://leafvmaple.com/rss.ja.xml" rel="self" type="application/rss+xml"/>
     <description>シニアゲーム開発者 / AI Native エンジニア。ゲームエンジン、レンダリング、OS カーネル、モダン C++ の技術実践の記録。</description>
     <language>ja</language>
-    <lastBuildDate>Thu, 04 Jun 2026 08:30:02 GMT</lastBuildDate>
+    <lastBuildDate>Wed, 24 Jun 2026 17:44:45 GMT</lastBuildDate>
     <item>
       <title>1 枚のエイリアスヘッダ：mini-cocos を hosted と freestanding の間で切り替える総スイッチ</title>
       <link>https://leafvmaple.com/post/10</link>
